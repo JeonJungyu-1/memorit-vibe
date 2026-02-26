@@ -2,8 +2,14 @@ import { useState, useEffect } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 import Contacts from 'react-native-contacts';
 
+export type ContactType = {
+  recordID: string;
+  displayName: string;
+  phoneNumbers: { number?: string }[];
+};
+
 export const useContacts = () => {
-  const [contacts, setContacts] = useState<Contacts.Contact[]>([]);
+  const [contacts, setContacts] = useState<ContactType[]>([]);
   const [loading, setLoading] = useState(false);
 
   const requestPermission = async () => {
@@ -17,7 +23,7 @@ export const useContacts = () => {
             buttonNeutral: '나중에',
             buttonNegative: '거부',
             buttonPositive: '허용',
-          }
+          },
         );
         return granted === PermissionsAndroid.RESULTS.GRANTED;
       } catch (err) {
@@ -33,8 +39,15 @@ export const useContacts = () => {
     const hasPermission = await requestPermission();
     if (hasPermission) {
       try {
-        const allContacts = await Contacts.getAll();
-        setContacts(allContacts);
+        const allContacts: any[] = await Contacts.getAll();
+        const normalized = allContacts.map(c => ({
+          recordID: c.recordID ?? String(Math.random()),
+          displayName: c.displayName ?? '',
+          phoneNumbers: Array.isArray(c.phoneNumbers)
+            ? c.phoneNumbers.map((p: any) => ({ number: p.number }))
+            : [],
+        }));
+        setContacts(normalized);
       } catch (e) {
         console.error('Error fetching contacts', e);
       }

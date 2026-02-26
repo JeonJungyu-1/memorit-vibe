@@ -8,7 +8,7 @@ export const getDBConnection = async () => {
   return SQLite.openDatabase({ name: database_name, location: 'default' });
 };
 
-export const createTables = async (db: SQLite.SQLiteDatabase) => {
+export const createTables = async (db: any) => {
   const query = `CREATE TABLE IF NOT EXISTS contacts (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         contactId TEXT UNIQUE,

@@ -1,8 +1,14 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  StyleSheet,
+  ActivityIndicator,
+} from 'react-native';
 import { useContacts } from '../hooks/useContacts';
 
-const ContactList = () => {
+const ContactList: React.FC = () => {
   const { contacts, loading } = useContacts();
 
   if (loading) {
@@ -18,13 +24,16 @@ const ContactList = () => {
       <Text style={styles.title}>연락처 리스트</Text>
       <FlatList
         data={contacts}
-        keyExtractor={(item) => item.recordID}
+        keyExtractor={item => item.recordID}
         renderItem={({ item }) => (
           <View style={styles.contactItem}>
-            <Text style={styles.name}>{item.displayName}</Text>
-            {item.phoneNumbers.length > 0 && (
-              <Text style={styles.phone}>{item.phoneNumbers[0].number}</Text>
-            )}
+            <Text style={styles.name}>{item.displayName || '이름 없음'}</Text>
+            {Array.isArray(item.phoneNumbers) &&
+              item.phoneNumbers.length > 0 && (
+                <Text style={styles.phone}>
+                  {item.phoneNumbers[0].number || '번호 없음'}
+                </Text>
+              )}
           </View>
         )}
       />
