@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,13 @@ import {
   Button,
 } from 'react-native';
 import { useContacts } from '../hooks/useContacts';
+import {
+  getDBConnection,
+  createTables,
+  getContactsCount,
+  saveContacts,
+  getSavedContacts,
+} from '../db/Database';
 
 const ContactList: React.FC = () => {
   const { contacts, loading } = useContacts();
@@ -35,9 +42,48 @@ const ContactList: React.FC = () => {
     const picked = contacts.filter((c: any) => selectedIds.has(c.recordID));
     setImportedContacts(picked);
     setMode('imported');
+    (async () => {
+      try {
+        const db = await getDBConnection();
+        await createTables(db);
+        const toSave = picked.map(p => ({
+          contactId: p.recordID,
+          displayName: p.displayName ?? '',
+          phoneNumber:
+            Array.isArray(p.phoneNumbers) && p.phoneNumbers.length > 0
+              ? p.phoneNumbers[0].number ?? ''
+              : '',
+        }));
+        await saveContacts(db, toSave);
+      } catch (e) {
+        console.error('Failed to save selected contacts', e);
+      }
+    })();
   };
 
   const selectedCount = useMemo(() => selectedIds.size, [selectedIds]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const db = await getDBConnection();
+        await createTables(db);
+        const count = await getContactsCount(db);
+        if (count > 0) {
+          const saved = await getSavedContacts(db);
+          const normalized = (saved as any[]).map(s => ({
+            recordID: s.contactId,
+            displayName: s.displayName,
+            phoneNumbers: s.phoneNumber ? [{ number: s.phoneNumber }] : [],
+          }));
+          setImportedContacts(normalized);
+          setMode('imported');
+        }
+      } catch (e) {
+        console.error('DB init error', e);
+      }
+    })();
+  }, []);
 
   if (loading) {
     return (
@@ -71,7 +117,7 @@ const ContactList: React.FC = () => {
 
       <FlatList
         data={listToShow}
-        keyExtractor={item => item.recordID}
+        keyExtractor={item => item.recordID ?? item.contactId}
         renderItem={({ item }) => (
           <TouchableOpacity
             activeOpacity={0.8}
@@ -90,11 +136,13 @@ const ContactList: React.FC = () => {
             <View style={styles.contactText}>
               <Text style={styles.name}>{item.displayName || '이름 없음'}</Text>
               {Array.isArray(item.phoneNumbers) &&
-                item.phoneNumbers.length > 0 && (
-                  <Text style={styles.phone}>
-                    {item.phoneNumbers[0].number || '번호 없음'}
-                  </Text>
-                )}
+              item.phoneNumbers.length > 0 ? (
+                <Text style={styles.phone}>
+                  {item.phoneNumbers[0].number || '번호 없음'}
+                </Text>
+              ) : item.phoneNumber ? (
+                <Text style={styles.phone}>{item.phoneNumber}</Text>
+              ) : null}
             </View>
           </TouchableOpacity>
         )}
