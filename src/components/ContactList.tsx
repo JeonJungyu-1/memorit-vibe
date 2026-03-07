@@ -3,6 +3,7 @@ import {
   View,
   FlatList,
   Text,
+  TextInput,
   Pressable,
   ActivityIndicator,
   StyleSheet,
@@ -26,12 +27,32 @@ type ContactListNavigationProp = NativeStackNavigationProp<
   'ContactSelect'
 >;
 
+/** 검색어 정규화: 소문자·공백 제거 후 includes 매칭용 */
+function normalizeSearchQuery(q: string): string {
+  return q.trim().toLowerCase().replace(/\s+/g, '');
+}
+
+/** 연락처 항목에서 검색 대상 문자열 추출 (select/imported 모드 공통) */
+function getSearchableText(item: {
+  displayName?: string;
+  phoneNumbers?: { number?: string }[];
+  phoneNumber?: string;
+}): string {
+  const name = item.displayName ?? '';
+  const phone =
+    Array.isArray(item.phoneNumbers) && item.phoneNumbers.length > 0
+      ? item.phoneNumbers[0].number ?? ''
+      : item.phoneNumber ?? '';
+  return `${name} ${phone}`;
+}
+
 const ContactList: React.FC = () => {
   const navigation = useNavigation<ContactListNavigationProp>();
   const { contacts, loading } = useContacts();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<'select' | 'imported'>('select');
   const [importedContacts, setImportedContacts] = useState<any[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -72,6 +93,18 @@ const ContactList: React.FC = () => {
 
   const selectedCount = useMemo(() => selectedIds.size, [selectedIds]);
 
+  const listToShow = mode === 'select' ? contacts : importedContacts;
+
+  const filteredList = useMemo(() => {
+    const q = normalizeSearchQuery(searchQuery);
+    if (!q) return listToShow;
+    const normalizedQ = q;
+    return listToShow.filter((item: any) => {
+      const text = normalizeSearchQuery(getSearchableText(item));
+      return text.includes(normalizedQ);
+    });
+  }, [listToShow, searchQuery]);
+
   useEffect(() => {
     (async () => {
       try {
@@ -102,8 +135,6 @@ const ContactList: React.FC = () => {
     );
   }
 
-  const listToShow = mode === 'select' ? contacts : importedContacts;
-
   return (
     <Container>
       <Text style={styles.title}>연락처 리스트</Text>
@@ -124,8 +155,16 @@ const ContactList: React.FC = () => {
         </View>
       )}
 
+      <TextInput
+        style={styles.searchInput}
+        placeholder="이름 또는 번호로 검색"
+        placeholderTextColor="#999"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
       <FlatList
-        data={listToShow}
+        data={filteredList}
         keyExtractor={item => item.recordID ?? item.contactId}
         renderItem={({ item }) => (
           <Pressable
@@ -188,6 +227,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 8,
     marginBottom: 8,
+  },
+  searchInput: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    marginBottom: 12,
+    backgroundColor: '#fafafa',
   },
   contactRow: {
     flexDirection: 'row',

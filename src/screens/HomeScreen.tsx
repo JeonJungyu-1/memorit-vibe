@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   FlatList,
   Text,
+  TextInput,
   StyleSheet,
   ActivityIndicator,
   Pressable,
@@ -39,12 +40,30 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
   other: '기타',
 };
 
+/** 검색어 정규화: 소문자·공백 제거 후 includes 매칭용 */
+function normalizeSearchQuery(q: string): string {
+  return q.trim().toLowerCase().replace(/\s+/g, '');
+}
+
+function matchContact(contact: SavedContact, normalizedQuery: string): boolean {
+  if (!normalizedQuery) return true;
+  const name = normalizeSearchQuery(contact.displayName ?? '');
+  const phone = normalizeSearchQuery(contact.phoneNumber ?? '');
+  return name.includes(normalizedQuery) || phone.includes(normalizedQuery);
+}
+
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [contacts, setContacts] = useState<SavedContact[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEventItem[]>(
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredContacts = useMemo(() => {
+    const q = normalizeSearchQuery(searchQuery);
+    return q ? contacts.filter(c => matchContact(c, q)) : contacts;
+  }, [contacts, searchQuery]);
 
   const loadContacts = useCallback(async () => {
     try {
@@ -122,8 +141,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         <Text style={styles.reselectButtonText}>연락처 다시 선택</Text>
       </Pressable>
 
+      <TextInput
+        style={styles.searchInput}
+        placeholder="이름 또는 번호로 검색"
+        placeholderTextColor="#999"
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
       <FlatList
-        data={contacts}
+        data={filteredContacts}
         keyExtractor={item => item.contactId}
         ListHeaderComponent={renderListHeader}
         renderItem={({ item }) => (
@@ -159,6 +186,16 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginBottom: 16,
+  },
+  searchInput: {
+    height: 44,
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    marginBottom: 16,
+    backgroundColor: '#fafafa',
   },
   reselectButton: {
     paddingVertical: 10,
