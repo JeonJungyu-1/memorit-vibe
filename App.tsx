@@ -56,6 +56,8 @@ function AppContent() {
     keyof RootStackParamList | null
   >(null);
   const accent = theme.blue9?.val ?? theme.blue9 ?? '#0a7ea4';
+  const screenBackgroundColor =
+    theme.background?.val ?? theme.background ?? '#fff';
 
   useEffect(() => {
     async function init() {
@@ -95,7 +97,10 @@ function AppContent() {
         <NavigationContainer>
         <Stack.Navigator
           initialRouteName={initialRoute}
-          screenOptions={{ headerShown: false }}
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: screenBackgroundColor },
+          }}
         >
           <Stack.Screen name="ContactSelect" component={ContactList} />
           <Stack.Screen name="Home" component={HomeScreen} />

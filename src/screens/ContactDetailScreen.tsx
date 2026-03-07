@@ -62,18 +62,20 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
-  const bg = getThemeColor(theme, 'background') || '#fff';
   const color = getThemeColor(theme, 'color') || '#333';
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const borderColor = getThemeColor(theme, 'borderColor') || '#ddd';
   const bgHover = getThemeColor(theme, 'backgroundHover') || '#f9f9f9';
+  /** AppShell과 동일한 방식으로 배경색 해석 (네이티브 스택 기본 배경 회피) */
+  const rawBg = (theme as { background?: { val?: string } | string }).background;
+  const screenBg =
+    (typeof rawBg === 'object' && rawBg?.val) || (typeof rawBg === 'string' ? rawBg : '') || '#fff';
   const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
   const red = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#c00';
 
   const themeStyles = useMemo(
     () => ({
-      container: { backgroundColor: bg },
       backButtonText: { color: accent },
       name: { color },
       phone: { color: accent },
@@ -90,7 +92,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
       eventMemo: { color: colorMuted },
       eventAmount: { color: accent },
     }),
-    [bg, accent, color, colorMuted, borderColor, bgHover, borderLight, red],
+    [accent, color, colorMuted, borderColor, bgHover, borderLight, red],
   );
 
   const loadData = useCallback(async () => {
@@ -172,7 +174,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
   if (loading) {
     return (
-      <View style={[styles.container, themeStyles.container]}>
+      <View style={[styles.screenRoot, { backgroundColor: screenBg }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={accent} />
         </View>
@@ -182,7 +184,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
   if (!contact) {
     return (
-      <View style={[styles.container, themeStyles.container]}>
+      <View style={[styles.screenRoot, { backgroundColor: screenBg }]}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
           <Text style={[styles.backButtonText, themeStyles.backButtonText]}>← 뒤로</Text>
         </Pressable>
@@ -192,7 +194,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   }
 
   return (
-    <View style={[styles.container, themeStyles.container]}>
+    <View style={[styles.screenRoot, { backgroundColor: screenBg }]}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
         <Text style={[styles.backButtonText, themeStyles.backButtonText]}>← 뒤로</Text>
       </Pressable>
@@ -595,7 +597,7 @@ const modalStyles = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  container: {
+  screenRoot: {
     flex: 1,
     padding: 16,
   },
