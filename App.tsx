@@ -14,6 +14,7 @@ import type { RootStackParamList } from './src/navigation/types';
 import ContactList from './src/components/ContactList';
 import HomeScreen from './src/screens/HomeScreen';
 import ContactDetailScreen from './src/screens/ContactDetailScreen';
+import SettingsScreen from './src/screens/SettingsScreen';
 import { getDBConnection, createTables, getContactsCount } from './src/db/Database';
 import { TamaguiProvider } from 'tamagui';
 import config from './tamagui.config';
@@ -75,6 +76,7 @@ const App = () => {
             <Stack.Screen name="ContactSelect" component={ContactList} />
             <Stack.Screen name="Home" component={HomeScreen} />
             <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
+            <Stack.Screen name="Settings" component={SettingsScreen} />
           </Stack.Navigator>
         </NavigationContainer>
         <Toast />

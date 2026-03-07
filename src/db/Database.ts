@@ -95,6 +95,9 @@ export const getEventsByContactId = async (
   return rows;
 };
 
+/**
+ * 이벤트 저장. 수정 시 기존 id, 신규 추가 시 새 id 반환.
+ */
 export const saveEvent = async (
   db: any,
   event: {
@@ -105,24 +108,27 @@ export const saveEvent = async (
     date: string;
     memo: string;
   },
-) => {
+): Promise<number> => {
   if (event.id != null) {
     await db.executeSql(
       'UPDATE events SET type = ?, amount = ?, date = ?, memo = ? WHERE id = ?;',
       [event.type, event.amount, event.date, event.memo ?? '', event.id],
     );
-  } else {
-    await db.executeSql(
-      'INSERT INTO events (contactId, type, amount, date, memo) VALUES (?, ?, ?, ?, ?);',
-      [
-        event.contactId,
-        event.type,
-        event.amount,
-        event.date,
-        event.memo ?? '',
-      ],
-    );
+    return event.id;
   }
+  await db.executeSql(
+    'INSERT INTO events (contactId, type, amount, date, memo) VALUES (?, ?, ?, ?, ?);',
+    [
+      event.contactId,
+      event.type,
+      event.amount,
+      event.date,
+      event.memo ?? '',
+    ],
+  );
+  const [result] = await db.executeSql('SELECT last_insert_rowid() as id');
+  const id = result?.rows?.length > 0 ? result.rows.item(0).id : 0;
+  return typeof id === 'number' ? id : parseInt(String(id), 10);
 };
 
 export const deleteEvent = async (db: any, id: number) => {

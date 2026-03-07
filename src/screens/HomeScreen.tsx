@@ -16,9 +16,11 @@ import {
   getDBConnection,
   createTables,
   getSavedContacts,
+  getEventsByContactId,
   getUpcomingEvents,
   removeContact,
 } from '../db/Database';
+import { cancelEventNotification } from '../services/notificationService';
 
 const UPCOMING_EVENTS_LIMIT = 10;
 
@@ -98,6 +100,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('ContactSelect');
   };
 
+  const handleOpenSettings = () => {
+    navigation.navigate('Settings');
+  };
+
   const handleRemoveContact = useCallback(
     (contact: SavedContact) => {
       Alert.alert(
@@ -111,6 +117,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress: async () => {
               try {
                 const db = await getDBConnection();
+                const events = await getEventsByContactId(db, contact.contactId);
+                for (const event of events) {
+                  await cancelEventNotification(event.id);
+                }
                 await removeContact(db, contact.contactId);
                 await loadContacts();
                 Toast.show({
@@ -173,7 +183,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   return (
     <Container flex={1} padding="$4" backgroundColor="$background">
-      <Text style={styles.header}>Memorit</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.header}>Memorit</Text>
+        <Pressable style={styles.settingsButton} onPress={handleOpenSettings}>
+          <Text style={styles.settingsButtonText}>설정</Text>
+        </Pressable>
+      </View>
       <Text style={styles.summary}>{contacts.length}명의 연락처</Text>
 
       <Pressable style={styles.reselectButton} onPress={handleReselectContacts}>
@@ -217,10 +232,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 const Container = styled(YStack, {});
 
 const styles = StyleSheet.create({
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
   header: {
     fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 8,
+  },
+  settingsButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  settingsButtonText: {
+    fontSize: 15,
+    color: '#0a7ea4',
   },
   summary: {
     fontSize: 16,

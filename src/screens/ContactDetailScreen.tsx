@@ -25,6 +25,10 @@ import {
   deleteEvent,
   type Event,
 } from '../db/Database';
+import {
+  scheduleEventNotification,
+  cancelEventNotification,
+} from '../services/notificationService';
 
 type SavedContact = {
   contactId: string;
@@ -103,6 +107,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
           style: 'destructive',
           onPress: async () => {
             try {
+              await cancelEventNotification(eventId);
               const db = await getDBConnection();
               await deleteEvent(db, eventId);
               loadData();
@@ -214,6 +219,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
         <AddEventModal
           key={editingEvent?.id ?? 'add'}
           contactId={contactId}
+          displayName={contact.displayName ?? '이름 없음'}
           initialEvent={editingEvent}
           onClose={() => {
             setShowAddEvent(false);
@@ -228,6 +234,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
 type AddEventModalProps = {
   contactId: string;
+  displayName: string;
   initialEvent?: Event | null;
   onClose: () => void;
 };
@@ -248,16 +255,23 @@ function parseDateString(dateStr: string): Date {
   return isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
+/** 두 자리 패딩 (ES2015 호환) */
+function pad2(n: number): string {
+  const s = String(n);
+  return s.length >= 2 ? s : '0' + s;
+}
+
 /** Date를 YYYY-MM-DD 문자열로 변환 (로컬 기준) */
 function formatDateToYYYYMMDD(d: Date): string {
   const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
+  const m = pad2(d.getMonth() + 1);
+  const day = pad2(d.getDate());
   return `${y}-${m}-${day}`;
 }
 
 const AddEventModal: React.FC<AddEventModalProps> = ({
   contactId,
+  displayName,
   initialEvent = null,
   onClose,
 }) => {
@@ -303,7 +317,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     setSaving(true);
     try {
       const db = await getDBConnection();
-      await saveEvent(db, {
+      const eventId = await saveEvent(db, {
         ...(initialEvent != null && { id: initialEvent.id }),
         contactId,
         type,
@@ -311,6 +325,13 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         date: trimmedDate,
         memo: memo.trim(),
       });
+      if (initialEvent != null) {
+        await cancelEventNotification(initialEvent.id);
+      }
+      const typeLabel = EVENT_TYPE_LABEL[type] ?? type;
+      const title = `${displayName} ${typeLabel}`;
+      const body = trimmedDate + (memo.trim() ? ` · ${memo.trim()}` : '');
+      await scheduleEventNotification(eventId, trimmedDate, title, body);
       Toast.show({
         type: 'success',
         text1: isEditMode ? '수정 완료' : '저장 완료',

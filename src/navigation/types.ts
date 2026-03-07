@@ -4,6 +4,7 @@ export type RootStackParamList = {
   ContactSelect: undefined;
   Home: undefined;
   ContactDetail: { contactId: string };
+  Settings: undefined;
 };
 
 export type ContactSelectScreenProps = NativeStackScreenProps<
@@ -14,4 +15,8 @@ export type HomeScreenProps = NativeStackScreenProps<RootStackParamList, 'Home'>
 export type ContactDetailScreenProps = NativeStackScreenProps<
   RootStackParamList,
   'ContactDetail'
+>;
+export type SettingsScreenProps = NativeStackScreenProps<
+  RootStackParamList,
+  'Settings'
 >;
