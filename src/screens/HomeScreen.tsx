@@ -7,6 +7,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   Pressable,
+  Alert,
 } from 'react-native';
 import { YStack, styled } from 'tamagui';
 import type { HomeScreenProps } from '../navigation/types';
@@ -15,6 +16,7 @@ import {
   createTables,
   getSavedContacts,
   getUpcomingEvents,
+  removeContact,
 } from '../db/Database';
 
 const UPCOMING_EVENTS_LIMIT = 10;
@@ -95,6 +97,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('ContactSelect');
   };
 
+  const handleRemoveContact = useCallback(
+    (contact: SavedContact) => {
+      Alert.alert(
+        '저장 목록에서 제거',
+        `"${contact.displayName || '이름 없음'}"을(를) 저장 목록에서 제거할까요? 관련 기념일도 함께 삭제됩니다.`,
+        [
+          { text: '취소', style: 'cancel' },
+          {
+            text: '제거',
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                const db = await getDBConnection();
+                await removeContact(db, contact.contactId);
+                await loadContacts();
+              } catch (e) {
+                console.error('Failed to remove contact', e);
+                Alert.alert('오류', '연락처를 제거하는 중 오류가 발생했습니다.');
+              }
+            },
+          },
+        ],
+      );
+    },
+    [loadContacts],
+  );
+
   if (loading) {
     return (
       <Container flex={1} alignItems="center" justifyContent="center">
@@ -159,6 +188,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             onPress={() =>
               navigation.navigate('ContactDetail', { contactId: item.contactId })
             }
+            onLongPress={() => handleRemoveContact(item)}
           >
             <Text style={styles.contactName}>
               {item.displayName || '이름 없음'}

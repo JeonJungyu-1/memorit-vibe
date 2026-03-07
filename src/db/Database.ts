@@ -198,3 +198,25 @@ export const saveContacts = async (
     throw e;
   }
 };
+
+/**
+ * 저장된 연락처 한 명과 해당 연락처의 모든 기념일을 삭제합니다.
+ */
+export const removeContact = async (
+  db: any,
+  contactId: string,
+): Promise<void> => {
+  try {
+    await db.transaction(async (tx: any) => {
+      await tx.executeSql('DELETE FROM events WHERE contactId = ?;', [
+        contactId,
+      ]);
+      await tx.executeSql('DELETE FROM contacts WHERE contactId = ?;', [
+        contactId,
+      ]);
+    });
+  } catch (e) {
+    console.error('Error removing contact', e);
+    throw e;
+  }
+};
