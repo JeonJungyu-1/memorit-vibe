@@ -30,17 +30,16 @@ import {
   scheduleEventNotification,
   cancelEventNotification,
 } from '../services/notificationService';
+import {
+  EVENT_TYPE_OPTIONS,
+  getEventLabel,
+  getEventDisplayText,
+} from '../constants/eventTypes';
 
 type SavedContact = {
   contactId: string;
   displayName: string;
   phoneNumber: string;
-};
-
-const EVENT_TYPE_LABEL: Record<string, string> = {
-  birthday: '생일',
-  anniversary: '기념일',
-  other: '기타',
 };
 
 function getThemeColor(theme: ReturnType<typeof useTheme>, key: string): string {
@@ -230,7 +229,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
                 onLongPress={() => handleDeleteEvent(item.id)}
               >
                 <Text style={[styles.eventType, themeStyles.name]}>
-                  {EVENT_TYPE_LABEL[item.type] ?? item.type}
+                  {getEventDisplayText(item.type)}
                 </Text>
                 <Text style={[styles.eventDate, themeStyles.eventDate]}>{item.date}</Text>
                 {item.memo ? (
@@ -280,12 +279,6 @@ type AddEventModalProps = {
   initialEvent?: Event | null;
   onClose: () => void;
 };
-
-const EVENT_TYPES = [
-  { value: 'birthday', label: '생일' },
-  { value: 'anniversary', label: '기념일' },
-  { value: 'other', label: '기타' },
-] as const;
 
 /** YYYY-MM-DD 문자열을 로컬 Date로 변환 */
 function parseDateString(dateStr: string): Date {
@@ -398,7 +391,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       if (initialEvent != null) {
         await cancelEventNotification(initialEvent.id);
       }
-      const typeLabel = EVENT_TYPE_LABEL[type] ?? type;
+      const typeLabel = getEventLabel(type);
       const title = `${displayName} ${typeLabel}`;
       const body = trimmedDate + (memo.trim() ? ` · ${memo.trim()}` : '');
       await scheduleEventNotification(eventId, trimmedDate, title, body);
@@ -435,7 +428,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={[modalStyles.label, modalThemeStyles.label]}>유형</Text>
             <View style={modalStyles.typeRow}>
-              {EVENT_TYPES.map(({ value, label }) => (
+              {EVENT_TYPE_OPTIONS.map(({ value, label, emoji }) => (
                 <Pressable
                   key={value}
                   style={[
@@ -452,7 +445,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                       type === value && modalThemeStyles.typeButtonTextActive,
                     ]}
                   >
-                    {label}
+                    {emoji} {label}
                   </Text>
                 </Pressable>
               ))}
@@ -563,6 +556,7 @@ const modalStyles = StyleSheet.create({
   },
   typeRow: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
     marginBottom: 16,
   },

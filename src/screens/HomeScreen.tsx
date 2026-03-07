@@ -22,6 +22,7 @@ import {
   removeContact,
 } from '../db/Database';
 import { cancelEventNotification } from '../services/notificationService';
+import { getEventDisplayText } from '../constants/eventTypes';
 
 const UPCOMING_EVENTS_LIMIT = 10;
 
@@ -38,12 +39,6 @@ export type SavedContact = {
   contactId: string;
   displayName: string;
   phoneNumber: string;
-};
-
-const EVENT_TYPE_LABEL: Record<string, string> = {
-  birthday: '생일',
-  anniversary: '기념일',
-  other: '기타',
 };
 
 /** 검색어 정규화: 소문자·공백 제거 후 includes 매칭용 */
@@ -217,7 +212,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           >
             <Text style={[styles.upcomingDate, themeStyles.upcomingDate]}>{item.date}</Text>
             <Text style={[styles.upcomingLabel, themeStyles.upcomingLabel]}>
-              {EVENT_TYPE_LABEL[item.type] ?? item.type}
+              {getEventDisplayText(item.type)}
               {item.displayName ? ` · ${item.displayName}` : ''}
             </Text>
             {item.memo ? (
