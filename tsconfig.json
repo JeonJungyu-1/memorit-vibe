@@ -3,7 +3,9 @@
   "compilerOptions": {
     "types": ["jest", "react", "react-native"],
     "skipLibCheck": true,
-    "jsx": "react-native"
+    "jsx": "react-native",
+    "esModuleInterop": true,
+    "lib": ["es2015"]
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["**/node_modules", "**/Pods"]

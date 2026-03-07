@@ -1,13 +1,17 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   View,
-  Text,
   FlatList,
-  StyleSheet,
+  Text,
+  Pressable,
   ActivityIndicator,
-  TouchableOpacity,
+  StyleSheet,
   Button,
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { YStack, styled } from 'tamagui';
+import type { RootStackParamList } from '../navigation/types';
 import { useContacts } from '../hooks/useContacts';
 import {
   getDBConnection,
@@ -17,7 +21,13 @@ import {
   getSavedContacts,
 } from '../db/Database';
 
+type ContactListNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  'ContactSelect'
+>;
+
 const ContactList: React.FC = () => {
+  const navigation = useNavigation<ContactListNavigationProp>();
   const { contacts, loading } = useContacts();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<'select' | 'imported'>('select');
@@ -38,27 +48,26 @@ const ContactList: React.FC = () => {
 
   const clearSelection = () => setSelectedIds(new Set());
 
-  const importSelected = () => {
+  const importSelected = async () => {
     const picked = contacts.filter((c: any) => selectedIds.has(c.recordID));
     setImportedContacts(picked);
     setMode('imported');
-    (async () => {
-      try {
-        const db = await getDBConnection();
-        await createTables(db);
-        const toSave = picked.map(p => ({
-          contactId: p.recordID,
-          displayName: p.displayName ?? '',
-          phoneNumber:
-            Array.isArray(p.phoneNumbers) && p.phoneNumbers.length > 0
-              ? p.phoneNumbers[0].number ?? ''
-              : '',
-        }));
-        await saveContacts(db, toSave);
-      } catch (e) {
-        console.error('Failed to save selected contacts', e);
-      }
-    })();
+    try {
+      const db = await getDBConnection();
+      await createTables(db);
+      const toSave = picked.map(p => ({
+        contactId: p.recordID,
+        displayName: p.displayName ?? '',
+        phoneNumber:
+          Array.isArray(p.phoneNumbers) && p.phoneNumbers.length > 0
+            ? p.phoneNumbers[0].number ?? ''
+            : '',
+      }));
+      await saveContacts(db, toSave);
+      navigation.replace('Home');
+    } catch (e) {
+      console.error('Failed to save selected contacts', e);
+    }
   };
 
   const selectedCount = useMemo(() => selectedIds.size, [selectedIds]);
@@ -87,16 +96,16 @@ const ContactList: React.FC = () => {
 
   if (loading) {
     return (
-      <View style={styles.center}>
+      <YStack alignItems="center" justifyContent="center">
         <ActivityIndicator size="large" color="#0000ff" />
-      </View>
+      </YStack>
     );
   }
 
   const listToShow = mode === 'select' ? contacts : importedContacts;
 
   return (
-    <View style={styles.container}>
+    <Container>
       <Text style={styles.title}>연락처 리스트</Text>
 
       {mode === 'select' ? (
@@ -119,22 +128,23 @@ const ContactList: React.FC = () => {
         data={listToShow}
         keyExtractor={item => item.recordID ?? item.contactId}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            activeOpacity={0.8}
+          <Pressable
             onPress={() =>
               mode === 'select' ? toggleSelect(item.recordID) : null
             }
-            style={styles.contactItem}
+            style={styles.contactRow}
           >
             {mode === 'select' && (
-              <View style={styles.checkbox}>
-                <Text style={styles.checkboxText}>
+              <Checkbox>
+                <Text style={styles.checkMark}>
                   {selectedIds.has(item.recordID) ? '✓' : ''}
                 </Text>
-              </View>
+              </Checkbox>
             )}
-            <View style={styles.contactText}>
-              <Text style={styles.name}>{item.displayName || '이름 없음'}</Text>
+            <YStack flex={1}>
+              <Text style={styles.contactName}>
+                {item.displayName || '이름 없음'}
+              </Text>
               {Array.isArray(item.phoneNumbers) &&
               item.phoneNumbers.length > 0 ? (
                 <Text style={styles.phone}>
@@ -143,63 +153,59 @@ const ContactList: React.FC = () => {
               ) : item.phoneNumber ? (
                 <Text style={styles.phone}>{item.phoneNumber}</Text>
               ) : null}
-            </View>
-          </TouchableOpacity>
+            </YStack>
+          </Pressable>
         )}
       />
-    </View>
+    </Container>
   );
 };
 
+const Container = styled(YStack, {
+  flex: 1,
+  padding: '$4',
+  backgroundColor: '$background',
+});
+
+const Checkbox = styled(YStack, {
+  width: 28,
+  height: 28,
+  borderWidth: 1,
+  borderColor: '$border',
+  borderRadius: 4,
+  justifyContent: 'center',
+  alignItems: 'center',
+  marginRight: '$2',
+});
+
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    padding: 16,
-    backgroundColor: '#fff',
-  },
   title: {
     fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: 12,
   },
-  center: {
-    flex: 1,
-    justifyContent: 'center',
+  selectBar: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  contactRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-  },
-  contactItem: {
-    padding: 12,
+    padding: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
-  name: {
+  contactName: {
     fontSize: 16,
     fontWeight: '500',
+  },
+  checkMark: {
+    fontSize: 14,
   },
   phone: {
     fontSize: 14,
     color: '#666',
-  },
-  selectBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-  },
-  checkbox: {
-    width: 28,
-    height: 28,
-    borderWidth: 1,
-    borderColor: '#ccc',
-    borderRadius: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  checkboxText: {
-    fontSize: 16,
-  },
-  contactText: {
-    flex: 1,
   },
 });
 

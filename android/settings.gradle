@@ -8,7 +8,3 @@ extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autoli
 rootProject.name = 'memorit'
 include ':app'
 includeBuild('../node_modules/@react-native/gradle-plugin')
-
-rootProject.name = 'memorit'
-include ':app'
-includeBuild('../node_modules/@react-native/gradle-plugin')
