@@ -14,6 +14,7 @@ import {
   Platform,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import Toast from 'react-native-toast-message';
 import type { ContactDetailScreenProps } from '../navigation/types';
 import {
   getDBConnection,
@@ -105,8 +106,18 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
               const db = await getDBConnection();
               await deleteEvent(db, eventId);
               loadData();
+              Toast.show({
+                type: 'success',
+                text1: '삭제 완료',
+                text2: '기념일이 삭제되었습니다.',
+              });
             } catch (e) {
               console.error('Failed to delete event', e);
+              Toast.show({
+                type: 'error',
+                text1: '삭제 실패',
+                text2: '기념일 삭제에 실패했습니다. 다시 시도해주세요.',
+              });
             }
           },
         },
@@ -300,10 +311,19 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         date: trimmedDate,
         memo: memo.trim(),
       });
+      Toast.show({
+        type: 'success',
+        text1: isEditMode ? '수정 완료' : '저장 완료',
+        text2: isEditMode ? '기념일이 수정되었습니다.' : '기념일이 저장되었습니다.',
+      });
       onClose();
     } catch (e) {
       console.error('Failed to save event', e);
-      Alert.alert('오류', '저장에 실패했습니다.');
+      Toast.show({
+        type: 'error',
+        text1: '저장 실패',
+        text2: '기념일 저장에 실패했습니다. 다시 시도해주세요.',
+      });
     } finally {
       setSaving(false);
     }

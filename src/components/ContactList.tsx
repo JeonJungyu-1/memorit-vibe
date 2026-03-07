@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
   View,
   FlatList,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import Toast from 'react-native-toast-message';
 import { YStack, styled } from 'tamagui';
 import type { RootStackParamList } from '../navigation/types';
 import { useContacts } from '../hooks/useContacts';
@@ -48,7 +49,14 @@ function getSearchableText(item: {
 
 const ContactList: React.FC = () => {
   const navigation = useNavigation<ContactListNavigationProp>();
-  const { contacts, loading } = useContacts();
+  const onPermissionDenied = useCallback(() => {
+    Toast.show({
+      type: 'error',
+      text1: '권한 거부',
+      text2: '연락처를 불러오려면 접근 권한을 허용해주세요.',
+    });
+  }, []);
+  const { contacts, loading } = useContacts({ onPermissionDenied });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<'select' | 'imported'>('select');
   const [importedContacts, setImportedContacts] = useState<any[]>([]);
@@ -85,9 +93,19 @@ const ContactList: React.FC = () => {
             : '',
       }));
       await saveContacts(db, toSave);
+      Toast.show({
+        type: 'success',
+        text1: '저장 완료',
+        text2: `${toSave.length}명의 연락처가 저장되었습니다.`,
+      });
       navigation.replace('Home');
     } catch (e) {
       console.error('Failed to save selected contacts', e);
+      Toast.show({
+        type: 'error',
+        text1: '저장 실패',
+        text2: '연락처 저장에 실패했습니다. 다시 시도해주세요.',
+      });
     }
   };
 

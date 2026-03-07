@@ -9,6 +9,7 @@ import {
   Pressable,
   Alert,
 } from 'react-native';
+import Toast from 'react-native-toast-message';
 import { YStack, styled } from 'tamagui';
 import type { HomeScreenProps } from '../navigation/types';
 import {
@@ -112,9 +113,18 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 const db = await getDBConnection();
                 await removeContact(db, contact.contactId);
                 await loadContacts();
+                Toast.show({
+                  type: 'success',
+                  text1: '제거 완료',
+                  text2: '저장 목록에서 연락처가 제거되었습니다.',
+                });
               } catch (e) {
                 console.error('Failed to remove contact', e);
-                Alert.alert('오류', '연락처를 제거하는 중 오류가 발생했습니다.');
+                Toast.show({
+                  type: 'error',
+                  text1: '제거 실패',
+                  text2: '연락처를 제거하는 중 오류가 발생했습니다. 다시 시도해주세요.',
+                });
               }
             },
           },

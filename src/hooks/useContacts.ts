@@ -8,7 +8,12 @@ export type ContactType = {
   phoneNumbers: { number?: string }[];
 };
 
-export const useContacts = () => {
+export type UseContactsOptions = {
+  onPermissionDenied?: () => void;
+};
+
+export const useContacts = (options?: UseContactsOptions) => {
+  const { onPermissionDenied } = options ?? {};
   const [contacts, setContacts] = useState<ContactType[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -25,9 +30,14 @@ export const useContacts = () => {
             buttonPositive: '허용',
           },
         );
-        return granted === PermissionsAndroid.RESULTS.GRANTED;
+        const hasPermission = granted === PermissionsAndroid.RESULTS.GRANTED;
+        if (!hasPermission) {
+          onPermissionDenied?.();
+        }
+        return hasPermission;
       } catch (err) {
         console.warn(err);
+        onPermissionDenied?.();
         return false;
       }
     }

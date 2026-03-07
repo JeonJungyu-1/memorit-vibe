@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import Toast from 'react-native-toast-message';
 import type { RootStackParamList } from './src/navigation/types';
 import ContactList from './src/components/ContactList';
 import HomeScreen from './src/screens/HomeScreen';
@@ -39,6 +40,11 @@ const App = () => {
         console.error('Failed to initialize database', error);
         setDbReady(true);
         setInitialRoute('ContactSelect');
+        Toast.show({
+          type: 'error',
+          text1: '초기화 실패',
+          text2: '데이터베이스 초기화에 실패했습니다.',
+        });
       }
     }
     init();
@@ -71,6 +77,7 @@ const App = () => {
             <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
           </Stack.Navigator>
         </NavigationContainer>
+        <Toast />
       </SafeAreaView>
     </TamaguiProvider>
   );
