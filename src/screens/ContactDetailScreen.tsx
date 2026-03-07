@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,9 @@ import {
   TextInput,
   ScrollView,
   Alert,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import type { ContactDetailScreenProps } from '../navigation/types';
 import {
   getDBConnection,
@@ -44,6 +46,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -79,6 +82,12 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   };
 
   const handleAddEvent = () => {
+    setEditingEvent(null);
+    setShowAddEvent(true);
+  };
+
+  const handleEditEvent = (event: Event) => {
+    setEditingEvent(event);
     setShowAddEvent(true);
   };
 
@@ -174,6 +183,12 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
                 ) : null}
               </Pressable>
               <Pressable
+                style={styles.editEventButton}
+                onPress={() => handleEditEvent(item)}
+              >
+                <Text style={styles.editEventButtonText}>수정</Text>
+              </Pressable>
+              <Pressable
                 style={styles.deleteEventButton}
                 onPress={() => handleDeleteEvent(item.id)}
               >
@@ -186,9 +201,12 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
       {showAddEvent && (
         <AddEventModal
+          key={editingEvent?.id ?? 'add'}
           contactId={contactId}
+          initialEvent={editingEvent}
           onClose={() => {
             setShowAddEvent(false);
+            setEditingEvent(null);
             loadData();
           }}
         />
@@ -199,6 +217,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
 type AddEventModalProps = {
   contactId: string;
+  initialEvent?: Event | null;
   onClose: () => void;
 };
 
@@ -208,17 +227,61 @@ const EVENT_TYPES = [
   { value: 'other', label: '기타' },
 ] as const;
 
+/** YYYY-MM-DD 문자열을 로컬 Date로 변환 */
+function parseDateString(dateStr: string): Date {
+  const trimmed = dateStr.trim();
+  if (!trimmed) return new Date();
+  const [y, m, d] = trimmed.split('-').map(Number);
+  if (!y || !m || !d) return new Date();
+  const parsed = new Date(y, m - 1, d);
+  return isNaN(parsed.getTime()) ? new Date() : parsed;
+}
+
+/** Date를 YYYY-MM-DD 문자열로 변환 (로컬 기준) */
+function formatDateToYYYYMMDD(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 const AddEventModal: React.FC<AddEventModalProps> = ({
   contactId,
+  initialEvent = null,
   onClose,
 }) => {
-  const [type, setType] = useState<string>('birthday');
-  const [date, setDate] = useState(() =>
-    new Date().toISOString().slice(0, 10),
+  const isEditMode = initialEvent != null;
+  const [type, setType] = useState<string>(
+    () => initialEvent?.type ?? 'birthday',
   );
-  const [memo, setMemo] = useState('');
-  const [amount, setAmount] = useState('');
+  const [date, setDate] = useState(() =>
+    initialEvent?.date ?? formatDateToYYYYMMDD(new Date()),
+  );
+  const [memo, setMemo] = useState(() => initialEvent?.memo ?? '');
+  const [amount, setAmount] = useState(() =>
+    initialEvent && initialEvent.amount > 0
+      ? String(initialEvent.amount)
+      : '',
+  );
   const [saving, setSaving] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+
+  const pickerDate = useMemo(() => parseDateString(date), [date]);
+
+  const handleDateChange = useCallback(
+    (event: { type: string }, selectedDate: Date | undefined) => {
+      if (Platform.OS === 'android') {
+        setShowDatePicker(false);
+      }
+      if (Platform.OS === 'android' && (event.type === 'dismissed' || event.type === 'cancel')) {
+        return;
+      }
+      if (selectedDate) {
+        setDate(formatDateToYYYYMMDD(selectedDate));
+      }
+    },
+    [],
+  );
 
   const handleSave = async () => {
     const trimmedDate = date.trim();
@@ -230,6 +293,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     try {
       const db = await getDBConnection();
       await saveEvent(db, {
+        ...(initialEvent != null && { id: initialEvent.id }),
         contactId,
         type,
         amount: parseInt(amount, 10) || 0,
@@ -254,7 +318,9 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     >
       <Pressable style={modalStyles.overlay} onPress={onClose}>
         <Pressable style={modalStyles.box} onPress={e => e.stopPropagation()}>
-          <Text style={modalStyles.title}>기념일 추가</Text>
+          <Text style={modalStyles.title}>
+            {isEditMode ? '기념일 수정' : '기념일 추가'}
+          </Text>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={modalStyles.label}>유형</Text>
             <View style={modalStyles.typeRow}>
@@ -278,15 +344,21 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 </Pressable>
               ))}
             </View>
-            <Text style={modalStyles.label}>날짜 (YYYY-MM-DD)</Text>
-            <TextInput
-              style={modalStyles.input}
-              value={date}
-              onChangeText={setDate}
-              placeholder="2025-01-15"
-              placeholderTextColor="#999"
-              autoCapitalize="none"
-            />
+            <Text style={modalStyles.label}>날짜</Text>
+            <Pressable
+              style={modalStyles.dateButton}
+              onPress={() => setShowDatePicker(true)}
+            >
+              <Text style={modalStyles.dateButtonText}>{date || '날짜 선택'}</Text>
+            </Pressable>
+            {showDatePicker && (
+              <DateTimePicker
+                value={pickerDate}
+                mode="date"
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                onChange={handleDateChange}
+              />
+            )}
             <Text style={modalStyles.label}>메모 (선택)</Text>
             <TextInput
               style={[modalStyles.input, modalStyles.inputMultiline]}
@@ -364,6 +436,19 @@ const modalStyles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     marginBottom: 16,
+  },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: '#ddd',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    marginBottom: 16,
+    backgroundColor: '#f9f9f9',
+  },
+  dateButtonText: {
+    fontSize: 16,
+    color: '#333',
   },
   inputMultiline: {
     minHeight: 60,
@@ -505,6 +590,14 @@ const styles = StyleSheet.create({
   },
   eventRowContent: {
     flex: 1,
+  },
+  editEventButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+  },
+  editEventButtonText: {
+    fontSize: 13,
+    color: '#0a7ea4',
   },
   deleteEventButton: {
     paddingVertical: 6,
