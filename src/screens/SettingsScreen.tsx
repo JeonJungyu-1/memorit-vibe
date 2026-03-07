@@ -6,8 +6,10 @@ import {
   StyleSheet,
   Switch,
   ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useTheme } from 'tamagui';
+import Toast from 'react-native-toast-message';
 import type { SettingsScreenProps } from '../navigation/types';
 import {
   getNotificationsEnabled,
@@ -15,6 +17,11 @@ import {
   getNotificationDaysBefore,
   setNotificationDaysBefore,
 } from '../utils/notificationSettings';
+import {
+  exportAndShareBackup,
+  pickAndRestoreBackup,
+  isDocumentPickerCancel,
+} from '../utils/backupRestore';
 import { useThemeMode } from '../contexts/ThemeContext';
 import type { ThemeMode } from '../utils/themeSettings';
 
@@ -73,6 +80,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [notificationsEnabled, setNotificationsEnabledState] = useState(true);
   const [daysBefore, setDaysBeforeState] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [backupRestoreBusy, setBackupRestoreBusy] = useState(false);
 
   const themeStyles = useMemo(
     () =>
@@ -121,6 +129,70 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setDaysBeforeState(value);
     await setNotificationDaysBefore(value);
   };
+
+  const handleExportBackup = useCallback(async () => {
+    if (backupRestoreBusy) return;
+    setBackupRestoreBusy(true);
+    try {
+      await exportAndShareBackup();
+      Toast.show({
+        type: 'success',
+        text1: '백업 준비 완료',
+        text2: '공유할 앱을 선택해 저장하세요.',
+      });
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      if (err?.message?.includes('User did not share') || err?.message === 'User did not share') {
+        return;
+      }
+      console.error('Backup export failed', e);
+      Toast.show({
+        type: 'error',
+        text1: '백업 실패',
+        text2: err?.message ?? '백업 파일을 만들 수 없습니다.',
+      });
+    } finally {
+      setBackupRestoreBusy(false);
+    }
+  }, [backupRestoreBusy]);
+
+  const handleRestoreBackup = useCallback(() => {
+    if (backupRestoreBusy) return;
+    Alert.alert(
+      '데이터 복원',
+      '기존 데이터가 모두 삭제되고 백업 내용으로 대체됩니다. 계속하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '복원',
+          style: 'destructive',
+          onPress: async () => {
+            setBackupRestoreBusy(true);
+            try {
+              const { contactsCount } = await pickAndRestoreBackup();
+              Toast.show({
+                type: 'success',
+                text1: '복원 완료',
+                text2: `연락처 ${contactsCount}명이 복원되었습니다.`,
+              });
+              navigation.navigate('Home');
+            } catch (e: unknown) {
+              if (isDocumentPickerCancel(e)) return;
+              const err = e as { message?: string };
+              console.error('Restore failed', e);
+              Toast.show({
+                type: 'error',
+                text1: '복원 실패',
+                text2: err?.message ?? '백업 파일을 불러올 수 없습니다.',
+              });
+            } finally {
+              setBackupRestoreBusy(false);
+            }
+          },
+        },
+      ],
+    );
+  }, [backupRestoreBusy, navigation]);
 
   const accent = theme.blue9?.val ?? theme.blue9 ?? '#0a7ea4';
 
@@ -203,6 +275,39 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           </View>
         </View>
       </View>
+
+      <View style={styles.section}>
+        <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
+          데이터 백업/복원
+        </Text>
+        <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.backupDescription]}>
+          기기 변경 또는 앱 재설치 시 백업 파일로 데이터를 복원할 수 있습니다.
+        </Text>
+        <View style={styles.backupButtons}>
+          <Pressable
+            style={[
+              themeStyles.dayChip,
+              styles.backupButton,
+              backupRestoreBusy && styles.buttonDisabled,
+            ]}
+            onPress={handleExportBackup}
+            disabled={backupRestoreBusy}
+          >
+            <Text style={[themeStyles.dayChipText]}>백업하여 공유</Text>
+          </Pressable>
+          <Pressable
+            style={[
+              themeStyles.dayChip,
+              styles.backupButton,
+              backupRestoreBusy && styles.buttonDisabled,
+            ]}
+            onPress={handleRestoreBackup}
+            disabled={backupRestoreBusy}
+          >
+            <Text style={[themeStyles.dayChipText]}>백업 파일에서 복원</Text>
+          </Pressable>
+        </View>
+      </View>
     </View>
   );
 };
@@ -260,6 +365,20 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
     gap: 8,
     marginTop: 8,
+  },
+  backupDescription: {
+    marginBottom: 12,
+  },
+  backupButtons: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  backupButton: {
+    minWidth: 140,
+  },
+  buttonDisabled: {
+    opacity: 0.6,
   },
 });
 

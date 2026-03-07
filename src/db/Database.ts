@@ -226,3 +226,120 @@ export const removeContact = async (
     throw e;
   }
 };
+
+/** 백업용 연락처 행 타입 */
+export type BackupContact = {
+  contactId: string;
+  displayName: string;
+  phoneNumber: string;
+};
+
+/** 백업용 이벤트 행 타입 (id 제외, 복원 시 재부여) */
+export type BackupEvent = {
+  contactId: string;
+  type: string;
+  amount: number;
+  date: string;
+  memo: string;
+};
+
+/** 백업 파일 포맷 */
+export type BackupData = {
+  version: number;
+  exportedAt: string;
+  app: string;
+  contacts: BackupContact[];
+  events: BackupEvent[];
+};
+
+const BACKUP_VERSION = 1;
+const BACKUP_APP_ID = 'memorit';
+
+/**
+ * 전체 연락처와 이벤트를 백업용 객체로 내보냅니다.
+ */
+export const exportBackupData = async (db: any): Promise<BackupData> => {
+  const [contactsResults] = await db.executeSql(
+    'SELECT contactId, displayName, phoneNumber FROM contacts ORDER BY id ASC;',
+  );
+  const contacts: BackupContact[] = [];
+  const contactCount = contactsResults?.rows?.length ?? 0;
+  for (let i = 0; i < contactCount; i++) {
+    const row = contactsResults.rows.item(i);
+    contacts.push({
+      contactId: row.contactId,
+      displayName: row.displayName ?? '',
+      phoneNumber: row.phoneNumber ?? '',
+    });
+  }
+
+  const [eventsResults] = await db.executeSql(
+    'SELECT contactId, type, amount, date, memo FROM events ORDER BY id ASC;',
+  );
+  const events: BackupEvent[] = [];
+  const eventCount = eventsResults?.rows?.length ?? 0;
+  for (let i = 0; i < eventCount; i++) {
+    const row = eventsResults.rows.item(i);
+    events.push({
+      contactId: row.contactId,
+      type: row.type,
+      amount: row.amount ?? 0,
+      date: row.date,
+      memo: row.memo ?? '',
+    });
+  }
+
+  return {
+    version: BACKUP_VERSION,
+    exportedAt: new Date().toISOString(),
+    app: BACKUP_APP_ID,
+    contacts,
+    events,
+  };
+};
+
+/**
+ * 백업 데이터를 DB에 복원합니다. 기존 데이터는 모두 삭제 후 덮어씁니다.
+ */
+export const restoreBackupData = async (
+  db: any,
+  data: BackupData,
+): Promise<void> => {
+  if (!data || data.app !== BACKUP_APP_ID || data.version !== BACKUP_VERSION) {
+    throw new Error('올바른 Memorit 백업 파일이 아닙니다.');
+  }
+  const contacts = Array.isArray(data.contacts) ? data.contacts : [];
+  const events = Array.isArray(data.events) ? data.events : [];
+
+  await db.transaction(async (tx: any) => {
+    await tx.executeSql('DELETE FROM events;');
+    await tx.executeSql('DELETE FROM contacts;');
+
+    const insertContact =
+      'INSERT INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);';
+    for (const c of contacts) {
+      if (c && c.contactId != null) {
+        await tx.executeSql(insertContact, [
+          String(c.contactId),
+          String(c.displayName ?? ''),
+          String(c.phoneNumber ?? ''),
+        ]);
+      }
+    }
+
+    const insertEvent =
+      'INSERT INTO events (contactId, type, amount, date, memo) VALUES (?, ?, ?, ?, ?);';
+    for (const e of events) {
+      if (e && e.contactId != null && e.date != null) {
+        await tx.executeSql(insertEvent, [
+          String(e.contactId),
+          String(e.type ?? ''),
+          Number(e.amount) || 0,
+          String(e.date),
+          String(e.memo ?? ''),
+        ]);
+      }
+    }
+  });
+};
+
