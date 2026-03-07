@@ -13,7 +13,19 @@ import {
   getDBConnection,
   createTables,
   getSavedContacts,
+  getUpcomingEvents,
 } from '../db/Database';
+
+const UPCOMING_EVENTS_LIMIT = 10;
+
+type UpcomingEventItem = {
+  id: number;
+  contactId: string;
+  type: string;
+  date: string;
+  memo: string;
+  displayName?: string;
+};
 
 export type SavedContact = {
   contactId: string;
@@ -21,8 +33,17 @@ export type SavedContact = {
   phoneNumber: string;
 };
 
+const EVENT_TYPE_LABEL: Record<string, string> = {
+  birthday: '생일',
+  anniversary: '기념일',
+  other: '기타',
+};
+
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [contacts, setContacts] = useState<SavedContact[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<UpcomingEventItem[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
 
   const loadContacts = useCallback(async () => {
@@ -31,8 +52,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       await createTables(db);
       const saved = await getSavedContacts(db);
       setContacts((saved as SavedContact[]) ?? []);
+      const upcoming = await getUpcomingEvents(db, UPCOMING_EVENTS_LIMIT);
+      setUpcomingEvents(upcoming as UpcomingEventItem[]);
     } catch (e) {
       console.error('Failed to load contacts on home', e);
+      setContacts([]);
+      setUpcomingEvents([]);
     } finally {
       setLoading(false);
     }
@@ -59,6 +84,35 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     );
   }
 
+  const renderListHeader = () =>
+    upcomingEvents.length > 0 ? (
+      <View style={styles.upcomingSection}>
+        <Text style={styles.upcomingSectionTitle}>다가오는 기념일</Text>
+        {upcomingEvents.map(item => (
+          <Pressable
+            key={`${item.id}-${item.contactId}`}
+            style={styles.upcomingRow}
+            onPress={() =>
+              navigation.navigate('ContactDetail', {
+                contactId: item.contactId,
+              })
+            }
+          >
+            <Text style={styles.upcomingDate}>{item.date}</Text>
+            <Text style={styles.upcomingLabel}>
+              {EVENT_TYPE_LABEL[item.type] ?? item.type}
+              {item.displayName ? ` · ${item.displayName}` : ''}
+            </Text>
+            {item.memo ? (
+              <Text style={styles.upcomingMemo} numberOfLines={1}>
+                {item.memo}
+              </Text>
+            ) : null}
+          </Pressable>
+        ))}
+      </View>
+    ) : null;
+
   return (
     <Container flex={1} padding="$4" backgroundColor="$background">
       <Text style={styles.header}>Memorit</Text>
@@ -71,15 +125,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <FlatList
         data={contacts}
         keyExtractor={item => item.contactId}
+        ListHeaderComponent={renderListHeader}
         renderItem={({ item }) => (
-          <View style={styles.contactRow}>
+          <Pressable
+            style={styles.contactRow}
+            onPress={() =>
+              navigation.navigate('ContactDetail', { contactId: item.contactId })
+            }
+          >
             <Text style={styles.contactName}>
               {item.displayName || '이름 없음'}
             </Text>
             {item.phoneNumber ? (
               <Text style={styles.phone}>{item.phoneNumber}</Text>
             ) : null}
-          </View>
+          </Pressable>
         )}
         style={styles.list}
       />
@@ -112,6 +172,40 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 15,
     fontWeight: '600',
+  },
+  upcomingSection: {
+    marginBottom: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+  },
+  upcomingSectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 10,
+    color: '#333',
+  },
+  upcomingRow: {
+    paddingVertical: 10,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  upcomingDate: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#0a7ea4',
+  },
+  upcomingLabel: {
+    fontSize: 14,
+    color: '#333',
+    marginTop: 2,
+  },
+  upcomingMemo: {
+    fontSize: 12,
+    color: '#888',
+    marginTop: 2,
   },
   contactRow: {
     paddingVertical: 12,
