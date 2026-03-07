@@ -16,18 +16,46 @@ import HomeScreen from './src/screens/HomeScreen';
 import ContactDetailScreen from './src/screens/ContactDetailScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import { getDBConnection, createTables, getContactsCount } from './src/db/Database';
-import { TamaguiProvider } from 'tamagui';
+import { TamaguiProvider, useTheme } from 'tamagui';
 import config from './tamagui.config';
+import { ThemeProvider, useThemeMode } from './src/contexts/ThemeContext';
 
 LogBox.ignoreLogs([/SQLite/]);
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
-const App = () => {
+function AppShell({ children }: { children: React.ReactNode }) {
+  const theme = useTheme();
+  const { resolvedTheme } = useThemeMode();
+  const backgroundColor = theme.background?.val ?? theme.background ?? '#fff';
+  const isDark = resolvedTheme === 'dark';
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+      {children}
+    </SafeAreaView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+});
+
+function AppContent() {
+  const theme = useTheme();
   const [dbReady, setDbReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState<
     keyof RootStackParamList | null
   >(null);
+  const accent = theme.blue9?.val ?? theme.blue9 ?? '#0a7ea4';
 
   useEffect(() => {
     async function init() {
@@ -53,48 +81,40 @@ const App = () => {
 
   if (!dbReady || initialRoute === null) {
     return (
-      <TamaguiProvider config={config}>
-        <SafeAreaView style={styles.container}>
-          <StatusBar barStyle="dark-content" />
-          <View style={styles.loading}>
-            <ActivityIndicator size="large" color="#0000ff" />
-          </View>
-        </SafeAreaView>
-      </TamaguiProvider>
+      <AppShell>
+        <View style={styles.loading}>
+          <ActivityIndicator size="large" color={accent} />
+        </View>
+      </AppShell>
     );
   }
 
   return (
-    <TamaguiProvider config={config}>
-      <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" />
+    <AppShell>
+      <>
         <NavigationContainer>
-          <Stack.Navigator
-            initialRouteName={initialRoute}
-            screenOptions={{ headerShown: false }}
-          >
-            <Stack.Screen name="ContactSelect" component={ContactList} />
-            <Stack.Screen name="Home" component={HomeScreen} />
-            <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
-            <Stack.Screen name="Settings" component={SettingsScreen} />
-          </Stack.Navigator>
-        </NavigationContainer>
-        <Toast />
-      </SafeAreaView>
-    </TamaguiProvider>
+        <Stack.Navigator
+          initialRouteName={initialRoute}
+          screenOptions={{ headerShown: false }}
+        >
+          <Stack.Screen name="ContactSelect" component={ContactList} />
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+        </Stack.Navigator>
+      </NavigationContainer>
+      <Toast />
+      </>
+    </AppShell>
   );
-};
+}
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
+const App = () => (
+  <ThemeProvider tamaguiConfig={config}>
+    <AppShell>
+      <AppContent />
+    </AppShell>
+  </ThemeProvider>
+);
 
 export default App;

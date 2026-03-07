@@ -12,6 +12,7 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
+import { useTheme } from 'tamagui';
 import { YStack, styled } from 'tamagui';
 import type { RootStackParamList } from '../navigation/types';
 import { useContacts } from '../hooks/useContacts';
@@ -47,8 +48,31 @@ function getSearchableText(item: {
   return `${name} ${phone}`;
 }
 
+function getThemeColor(theme: ReturnType<typeof useTheme>, key: string): string {
+  const v = (theme as Record<string, unknown>)[key];
+  if (typeof v === 'object' && v !== null && 'val' in v) return (v as { val: string }).val;
+  return typeof v === 'string' ? v : '';
+}
+
 const ContactList: React.FC = () => {
+  const theme = useTheme();
   const navigation = useNavigation<ContactListNavigationProp>();
+  const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
+  const borderColor = getThemeColor(theme, 'borderColor') || '#ddd';
+  const bgHover = getThemeColor(theme, 'backgroundHover') || '#fafafa';
+  const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
+  const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
+  const borderLight = getThemeColor(theme, 'gray4') || '#eee';
+
+  const themeStyles = useMemo(
+    () => ({
+      searchInput: { borderColor, backgroundColor: bgHover },
+      contactRow: { borderBottomColor: borderLight },
+      phone: { color: colorMuted },
+    }),
+    [borderColor, bgHover, borderLight, colorMuted],
+  );
+
   const onPermissionDenied = useCallback(() => {
     Toast.show({
       type: 'error',
@@ -148,7 +172,7 @@ const ContactList: React.FC = () => {
   if (loading) {
     return (
       <YStack alignItems="center" justifyContent="center">
-        <ActivityIndicator size="large" color="#0000ff" />
+        <ActivityIndicator size="large" color={accent} />
       </YStack>
     );
   }
@@ -174,9 +198,9 @@ const ContactList: React.FC = () => {
       )}
 
       <TextInput
-        style={styles.searchInput}
+        style={[styles.searchInput, themeStyles.searchInput]}
         placeholder="이름 또는 번호로 검색"
-        placeholderTextColor="#999"
+        placeholderTextColor={placeholderColor}
         value={searchQuery}
         onChangeText={setSearchQuery}
       />
@@ -189,7 +213,7 @@ const ContactList: React.FC = () => {
             onPress={() =>
               mode === 'select' ? toggleSelect(item.recordID) : null
             }
-            style={styles.contactRow}
+            style={[styles.contactRow, themeStyles.contactRow]}
           >
             {mode === 'select' && (
               <Checkbox>
@@ -204,11 +228,11 @@ const ContactList: React.FC = () => {
               </Text>
               {Array.isArray(item.phoneNumbers) &&
               item.phoneNumbers.length > 0 ? (
-                <Text style={styles.phone}>
+                <Text style={[styles.phone, themeStyles.phone]}>
                   {item.phoneNumbers[0].number || '번호 없음'}
                 </Text>
               ) : item.phoneNumber ? (
-                <Text style={styles.phone}>{item.phoneNumber}</Text>
+                <Text style={[styles.phone, themeStyles.phone]}>{item.phoneNumber}</Text>
               ) : null}
             </YStack>
           </Pressable>
@@ -249,19 +273,16 @@ const styles = StyleSheet.create({
   searchInput: {
     height: 44,
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 12,
     fontSize: 16,
     marginBottom: 12,
-    backgroundColor: '#fafafa',
   },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
     padding: 8,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   contactName: {
     fontSize: 16,
@@ -272,7 +293,6 @@ const styles = StyleSheet.create({
   },
   phone: {
     fontSize: 14,
-    color: '#666',
   },
 });
 

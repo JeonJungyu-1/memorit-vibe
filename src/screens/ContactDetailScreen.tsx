@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
+import { useTheme } from 'tamagui';
 import type { ContactDetailScreenProps } from '../navigation/types';
 import {
   getDBConnection,
@@ -42,16 +43,55 @@ const EVENT_TYPE_LABEL: Record<string, string> = {
   other: '기타',
 };
 
+function getThemeColor(theme: ReturnType<typeof useTheme>, key: string): string {
+  const v = (theme as Record<string, unknown>)[key];
+  if (typeof v === 'object' && v !== null && 'val' in v) return (v as { val: string }).val;
+  return typeof v === 'string' ? v : '';
+}
+
 const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   navigation,
   route,
 }) => {
+  const theme = useTheme();
   const { contactId } = route.params;
   const [contact, setContact] = useState<SavedContact | null>(null);
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+
+  const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
+  const bg = getThemeColor(theme, 'background') || '#fff';
+  const color = getThemeColor(theme, 'color') || '#333';
+  const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
+  const borderColor = getThemeColor(theme, 'borderColor') || '#ddd';
+  const bgHover = getThemeColor(theme, 'backgroundHover') || '#f9f9f9';
+  const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
+  const borderLight = getThemeColor(theme, 'gray4') || '#eee';
+  const red = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#c00';
+
+  const themeStyles = useMemo(
+    () => ({
+      container: { backgroundColor: bg },
+      backButtonText: { color: accent },
+      name: { color },
+      phone: { color: accent },
+      phoneHint: { color: colorMuted },
+      phoneEmpty: { color: colorMuted },
+      errorText: { color: colorMuted },
+      addButton: { backgroundColor: accent },
+      addButtonText: { color: '#fff' },
+      emptyEvents: { color: colorMuted },
+      eventRow: { borderBottomColor: borderLight },
+      editEventButtonText: { color: accent },
+      deleteEventButtonText: { color: red },
+      eventDate: { color: colorMuted },
+      eventMemo: { color: colorMuted },
+      eventAmount: { color: accent },
+    }),
+    [bg, accent, color, colorMuted, borderColor, bgHover, borderLight, red],
+  );
 
   const loadData = useCallback(async () => {
     try {
@@ -132,9 +172,9 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
   if (loading) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, themeStyles.container]}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#0a7ea4" />
+          <ActivityIndicator size="large" color={accent} />
         </View>
       </View>
     );
@@ -142,36 +182,36 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
   if (!contact) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, themeStyles.container]}>
         <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={styles.backButtonText}>← 뒤로</Text>
+          <Text style={[styles.backButtonText, themeStyles.backButtonText]}>← 뒤로</Text>
         </Pressable>
-        <Text style={styles.errorText}>연락처를 찾을 수 없습니다.</Text>
+        <Text style={[styles.errorText, themeStyles.errorText]}>연락처를 찾을 수 없습니다.</Text>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, themeStyles.container]}>
       <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={styles.backButtonText}>← 뒤로</Text>
+        <Text style={[styles.backButtonText, themeStyles.backButtonText]}>← 뒤로</Text>
       </Pressable>
 
-      <Text style={styles.name}>{contact.displayName || '이름 없음'}</Text>
+      <Text style={[styles.name, themeStyles.name]}>{contact.displayName || '이름 없음'}</Text>
       {contact.phoneNumber ? (
         <Pressable style={styles.phoneRow} onPress={handleCall}>
-          <Text style={styles.phone}>{contact.phoneNumber}</Text>
-          <Text style={styles.phoneHint}>탭하여 전화걸기</Text>
+          <Text style={[styles.phone, themeStyles.phone]}>{contact.phoneNumber}</Text>
+          <Text style={[styles.phoneHint, themeStyles.phoneHint]}>탭하여 전화걸기</Text>
         </Pressable>
       ) : (
-        <Text style={styles.phoneEmpty}>전화번호 없음</Text>
+        <Text style={[styles.phoneEmpty, themeStyles.phoneEmpty]}>전화번호 없음</Text>
       )}
 
       <View style={styles.eventsSection}>
         <View style={styles.eventsSectionHeader}>
-          <Text style={styles.eventsSectionTitle}>기념일</Text>
-          <Pressable style={styles.addButton} onPress={handleAddEvent}>
-            <Text style={styles.addButtonText}>기념일 추가</Text>
+          <Text style={[styles.eventsSectionTitle, themeStyles.name]}>기념일</Text>
+          <Pressable style={[styles.addButton, themeStyles.addButton]} onPress={handleAddEvent}>
+            <Text style={[styles.addButtonText, themeStyles.addButtonText]}>기념일 추가</Text>
           </Pressable>
         </View>
         <FlatList
@@ -179,36 +219,36 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
           keyExtractor={item => String(item.id)}
           style={styles.eventsList}
           ListEmptyComponent={
-            <Text style={styles.emptyEvents}>등록된 기념일이 없습니다.</Text>
+            <Text style={[styles.emptyEvents, themeStyles.emptyEvents]}>등록된 기념일이 없습니다.</Text>
           }
           renderItem={({ item }) => (
-            <View style={styles.eventRow}>
+            <View style={[styles.eventRow, themeStyles.eventRow]}>
               <Pressable
                 style={styles.eventRowContent}
                 onLongPress={() => handleDeleteEvent(item.id)}
               >
-                <Text style={styles.eventType}>
+                <Text style={[styles.eventType, themeStyles.name]}>
                   {EVENT_TYPE_LABEL[item.type] ?? item.type}
                 </Text>
-                <Text style={styles.eventDate}>{item.date}</Text>
+                <Text style={[styles.eventDate, themeStyles.eventDate]}>{item.date}</Text>
                 {item.memo ? (
-                  <Text style={styles.eventMemo}>{item.memo}</Text>
+                  <Text style={[styles.eventMemo, themeStyles.eventMemo]}>{item.memo}</Text>
                 ) : null}
                 {item.amount > 0 ? (
-                  <Text style={styles.eventAmount}>{item.amount}주년</Text>
+                  <Text style={[styles.eventAmount, themeStyles.eventAmount]}>{item.amount}주년</Text>
                 ) : null}
               </Pressable>
               <Pressable
                 style={styles.editEventButton}
                 onPress={() => handleEditEvent(item)}
               >
-                <Text style={styles.editEventButtonText}>수정</Text>
+                <Text style={[styles.editEventButtonText, themeStyles.editEventButtonText]}>수정</Text>
               </Pressable>
               <Pressable
                 style={styles.deleteEventButton}
                 onPress={() => handleDeleteEvent(item.id)}
               >
-                <Text style={styles.deleteEventButtonText}>삭제</Text>
+                <Text style={[styles.deleteEventButtonText, themeStyles.deleteEventButtonText]}>삭제</Text>
               </Pressable>
             </View>
           )}
@@ -275,6 +315,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   initialEvent = null,
   onClose,
 }) => {
+  const modalTheme = useTheme();
   const isEditMode = initialEvent != null;
   const [type, setType] = useState<string>(
     () => initialEvent?.type ?? 'birthday',
@@ -292,6 +333,33 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const [showDatePicker, setShowDatePicker] = useState(false);
 
   const pickerDate = useMemo(() => parseDateString(date), [date]);
+
+  const modalAccent = getThemeColor(modalTheme, 'blue9') || '#0a7ea4';
+  const modalBg = getThemeColor(modalTheme, 'background') || '#fff';
+  const modalColor = getThemeColor(modalTheme, 'color') || '#333';
+  const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#ddd';
+  const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f9f9f9';
+  const modalColorMuted = getThemeColor(modalTheme, 'color11') || getThemeColor(modalTheme, 'gray11') || '#666';
+  const modalPlaceholder = getThemeColor(modalTheme, 'placeholderColor') || '#999';
+
+  const modalThemeStyles = useMemo(
+    () => ({
+      box: { backgroundColor: modalBg },
+      title: { color: modalColor },
+      label: { color: modalColor },
+      input: { borderColor: modalBorder },
+      dateButton: { borderColor: modalBorder, backgroundColor: modalBgHover },
+      dateButtonText: { color: modalColor },
+      typeButton: { borderColor: modalBorder },
+      typeButtonActive: { backgroundColor: modalAccent, borderColor: modalAccent },
+      typeButtonText: { color: modalColor },
+      typeButtonTextActive: { color: '#fff' },
+      cancelButtonText: { color: modalColorMuted },
+      closeButton: { backgroundColor: modalAccent },
+      closeButtonText: { color: '#fff' },
+    }),
+    [modalBg, modalColor, modalBorder, modalBgHover, modalColorMuted, modalAccent],
+  );
 
   const handleDateChange = useCallback(
     (event: { type: string }, selectedDate: Date | undefined) => {
@@ -358,26 +426,28 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       onRequestClose={onClose}
     >
       <Pressable style={modalStyles.overlay} onPress={onClose}>
-        <Pressable style={modalStyles.box} onPress={e => e.stopPropagation()}>
-          <Text style={modalStyles.title}>
+        <Pressable style={[modalStyles.box, modalThemeStyles.box]} onPress={e => e.stopPropagation()}>
+          <Text style={[modalStyles.title, modalThemeStyles.title]}>
             {isEditMode ? '기념일 수정' : '기념일 추가'}
           </Text>
           <ScrollView keyboardShouldPersistTaps="handled">
-            <Text style={modalStyles.label}>유형</Text>
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>유형</Text>
             <View style={modalStyles.typeRow}>
               {EVENT_TYPES.map(({ value, label }) => (
                 <Pressable
                   key={value}
                   style={[
                     modalStyles.typeButton,
-                    type === value && modalStyles.typeButtonActive,
+                    modalThemeStyles.typeButton,
+                    type === value && modalThemeStyles.typeButtonActive,
                   ]}
                   onPress={() => setType(value)}
                 >
                   <Text
                     style={[
                       modalStyles.typeButtonText,
-                      type === value && modalStyles.typeButtonTextActive,
+                      modalThemeStyles.typeButtonText,
+                      type === value && modalThemeStyles.typeButtonTextActive,
                     ]}
                   >
                     {label}
@@ -385,12 +455,12 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 </Pressable>
               ))}
             </View>
-            <Text style={modalStyles.label}>날짜</Text>
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>날짜</Text>
             <Pressable
-              style={modalStyles.dateButton}
+              style={[modalStyles.dateButton, modalThemeStyles.dateButton]}
               onPress={() => setShowDatePicker(true)}
             >
-              <Text style={modalStyles.dateButtonText}>{date || '날짜 선택'}</Text>
+              <Text style={[modalStyles.dateButtonText, modalThemeStyles.dateButtonText]}>{date || '날짜 선택'}</Text>
             </Pressable>
             {showDatePicker && (
               <DateTimePicker
@@ -400,22 +470,22 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 onChange={handleDateChange}
               />
             )}
-            <Text style={modalStyles.label}>메모 (선택)</Text>
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>메모 (선택)</Text>
             <TextInput
-              style={[modalStyles.input, modalStyles.inputMultiline]}
+              style={[modalStyles.input, modalStyles.inputMultiline, modalThemeStyles.input]}
               value={memo}
               onChangeText={setMemo}
               placeholder="메모"
-              placeholderTextColor="#999"
+              placeholderTextColor={modalPlaceholder}
               multiline
             />
-            <Text style={modalStyles.label}>N주년 (선택, 숫자만)</Text>
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>N주년 (선택, 숫자만)</Text>
             <TextInput
-              style={modalStyles.input}
+              style={[modalStyles.input, modalThemeStyles.input]}
               value={amount}
               onChangeText={setAmount}
               placeholder="0"
-              placeholderTextColor="#999"
+              placeholderTextColor={modalPlaceholder}
               keyboardType="number-pad"
             />
           </ScrollView>
@@ -424,14 +494,14 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               style={[modalStyles.closeButton, modalStyles.cancelButton]}
               onPress={onClose}
             >
-              <Text style={modalStyles.cancelButtonText}>취소</Text>
+              <Text style={[modalStyles.cancelButtonText, modalThemeStyles.cancelButtonText]}>취소</Text>
             </Pressable>
             <Pressable
-              style={modalStyles.closeButton}
+              style={[modalStyles.closeButton, modalThemeStyles.closeButton]}
               onPress={handleSave}
               disabled={saving}
             >
-              <Text style={modalStyles.closeButtonText}>
+              <Text style={[modalStyles.closeButtonText, modalThemeStyles.closeButtonText]}>
                 {saving ? '저장 중…' : '저장'}
               </Text>
             </Pressable>
@@ -451,7 +521,6 @@ const modalStyles = StyleSheet.create({
     padding: 24,
   },
   box: {
-    backgroundColor: '#fff',
     borderRadius: 12,
     padding: 24,
     minWidth: 280,
@@ -467,11 +536,9 @@ const modalStyles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
     marginBottom: 6,
-    color: '#333',
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
@@ -480,16 +547,13 @@ const modalStyles = StyleSheet.create({
   },
   dateButton: {
     borderWidth: 1,
-    borderColor: '#ddd',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 12,
     marginBottom: 16,
-    backgroundColor: '#f9f9f9',
   },
   dateButtonText: {
     fontSize: 16,
-    color: '#333',
   },
   inputMultiline: {
     minHeight: 60,
@@ -505,18 +569,9 @@ const modalStyles = StyleSheet.create({
     paddingHorizontal: 14,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
-  },
-  typeButtonActive: {
-    backgroundColor: '#0a7ea4',
-    borderColor: '#0a7ea4',
   },
   typeButtonText: {
     fontSize: 14,
-    color: '#333',
-  },
-  typeButtonTextActive: {
-    color: '#fff',
   },
   actions: {
     flexDirection: 'row',
@@ -528,16 +583,13 @@ const modalStyles = StyleSheet.create({
     backgroundColor: 'transparent',
   },
   cancelButtonText: {
-    color: '#666',
   },
   closeButton: {
     paddingVertical: 8,
     paddingHorizontal: 16,
-    backgroundColor: '#0a7ea4',
     borderRadius: 8,
   },
   closeButtonText: {
-    color: '#fff',
     fontSize: 15,
   },
 });
@@ -546,7 +598,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
   },
   loadingContainer: {
     flex: 1,
@@ -561,7 +612,6 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 16,
-    color: '#0a7ea4',
   },
   name: {
     fontSize: 24,
@@ -573,21 +623,17 @@ const styles = StyleSheet.create({
   },
   phone: {
     fontSize: 16,
-    color: '#0a7ea4',
   },
   phoneHint: {
     fontSize: 12,
-    color: '#888',
     marginTop: 4,
   },
   phoneEmpty: {
     fontSize: 14,
-    color: '#888',
     marginBottom: 24,
   },
   errorText: {
     fontSize: 16,
-    color: '#666',
   },
   eventsSection: {
     flex: 1,
@@ -605,11 +651,9 @@ const styles = StyleSheet.create({
   addButton: {
     paddingVertical: 8,
     paddingHorizontal: 14,
-    backgroundColor: '#0a7ea4',
     borderRadius: 8,
   },
   addButtonText: {
-    color: '#fff',
     fontSize: 14,
     fontWeight: '500',
   },
@@ -618,7 +662,6 @@ const styles = StyleSheet.create({
   },
   emptyEvents: {
     fontSize: 14,
-    color: '#888',
     paddingVertical: 24,
   },
   eventRow: {
@@ -627,7 +670,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 4,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
   },
   eventRowContent: {
     flex: 1,
@@ -638,7 +680,6 @@ const styles = StyleSheet.create({
   },
   editEventButtonText: {
     fontSize: 13,
-    color: '#0a7ea4',
   },
   deleteEventButton: {
     paddingVertical: 6,
@@ -646,7 +687,6 @@ const styles = StyleSheet.create({
   },
   deleteEventButtonText: {
     fontSize: 13,
-    color: '#c00',
   },
   eventType: {
     fontSize: 16,
@@ -654,17 +694,14 @@ const styles = StyleSheet.create({
   },
   eventDate: {
     fontSize: 14,
-    color: '#666',
     marginTop: 4,
   },
   eventMemo: {
     fontSize: 13,
-    color: '#888',
     marginTop: 4,
   },
   eventAmount: {
     fontSize: 12,
-    color: '#0a7ea4',
     marginTop: 4,
   },
 });
