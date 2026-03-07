@@ -80,7 +80,14 @@ const ContactList: React.FC = () => {
       text2: '연락처를 불러오려면 접근 권한을 허용해주세요.',
     });
   }, []);
-  const { contacts, loading } = useContacts({ onPermissionDenied });
+  const onFetchError = useCallback(() => {
+    Toast.show({
+      type: 'error',
+      text1: '연락처 불러오기 실패',
+      text2: '연락처를 불러올 수 없습니다. 다시 시도해주세요.',
+    });
+  }, []);
+  const { contacts, loading } = useContacts({ onPermissionDenied, onFetchError });
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<'select' | 'imported'>('select');
   const [importedContacts, setImportedContacts] = useState<any[]>([]);

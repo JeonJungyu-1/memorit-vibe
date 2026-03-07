@@ -10,14 +10,15 @@ export type ContactType = {
 
 export type UseContactsOptions = {
   onPermissionDenied?: () => void;
+  onFetchError?: (error: unknown) => void;
 };
 
 export const useContacts = (options?: UseContactsOptions) => {
-  const { onPermissionDenied } = options ?? {};
+  const { onPermissionDenied, onFetchError } = options ?? {};
   const [contacts, setContacts] = useState<ContactType[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const requestPermission = async () => {
+  const requestPermission = async (): Promise<boolean> => {
     if (Platform.OS === 'android') {
       try {
         const granted = await PermissionsAndroid.request(
@@ -46,8 +47,26 @@ export const useContacts = (options?: UseContactsOptions) => {
 
   const loadContacts = async () => {
     setLoading(true);
-    const hasPermission = await requestPermission();
-    if (hasPermission) {
+    try {
+      let hasPermission = false;
+      try {
+        hasPermission = await requestPermission();
+      } catch (e) {
+        console.warn('Permission request failed', e);
+        onPermissionDenied?.();
+      }
+
+      if (!hasPermission) {
+        return;
+      }
+
+      if (Contacts == null || typeof Contacts.getAll !== 'function') {
+        console.error('Contacts native module is not available');
+        setContacts([]);
+        onFetchError?.(new Error('연락처 모듈을 사용할 수 없습니다.'));
+        return;
+      }
+
       try {
         const allContacts: any[] = await Contacts.getAll();
         const normalized = allContacts.map(c => ({
@@ -60,13 +79,18 @@ export const useContacts = (options?: UseContactsOptions) => {
         setContacts(normalized);
       } catch (e) {
         console.error('Error fetching contacts', e);
+        setContacts([]);
+        onFetchError?.(e);
       }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   useEffect(() => {
-    loadContacts();
+    loadContacts().catch(e => {
+      console.error('Unhandled error in loadContacts', e);
+    });
   }, []);
 
   return { contacts, loading, loadContacts };

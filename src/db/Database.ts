@@ -189,20 +189,32 @@ export const saveContacts = async (
 ) => {
   if (!contacts || contacts.length === 0) return;
   const insertQuery = `INSERT OR REPLACE INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);`;
-  try {
-    await db.transaction(async (tx: any) => {
-      for (const c of contacts) {
-        await tx.executeSql(insertQuery, [
-          c.contactId,
-          c.displayName,
-          c.phoneNumber ?? '',
-        ]);
-      }
-    });
-  } catch (e) {
-    console.error('Error saving contacts', e);
-    throw e;
-  }
+  return new Promise<void>((resolve, reject) => {
+    db.transaction(
+      (tx: any) => {
+        let index = 0;
+        const runNext = () => {
+          if (index >= contacts.length) return;
+          const c = contacts[index++];
+          tx.executeSql(
+            insertQuery,
+            [c.contactId, c.displayName, c.phoneNumber ?? ''],
+            () => runNext(),
+            (_tx: any, err: any) => {
+              reject(err);
+              return false;
+            },
+          );
+        };
+        runNext();
+      },
+      (err: any) => {
+        console.error('Error saving contacts', err);
+        reject(err);
+      },
+      () => resolve(),
+    );
+  });
 };
 
 /**
@@ -212,19 +224,36 @@ export const removeContact = async (
   db: any,
   contactId: string,
 ): Promise<void> => {
-  try {
-    await db.transaction(async (tx: any) => {
-      await tx.executeSql('DELETE FROM events WHERE contactId = ?;', [
-        contactId,
-      ]);
-      await tx.executeSql('DELETE FROM contacts WHERE contactId = ?;', [
-        contactId,
-      ]);
-    });
-  } catch (e) {
-    console.error('Error removing contact', e);
-    throw e;
-  }
+  return new Promise<void>((resolve, reject) => {
+    db.transaction(
+      (tx: any) => {
+        tx.executeSql(
+          'DELETE FROM events WHERE contactId = ?;',
+          [contactId],
+          () => {
+            tx.executeSql(
+              'DELETE FROM contacts WHERE contactId = ?;',
+              [contactId],
+              () => {},
+              (_tx: any, err: any) => {
+                reject(err);
+                return false;
+              },
+            );
+          },
+          (_tx: any, err: any) => {
+            reject(err);
+            return false;
+          },
+        );
+      },
+      (err: any) => {
+        console.error('Error removing contact', err);
+        reject(err);
+      },
+      () => resolve(),
+    );
+  });
 };
 
 /** 백업용 연락처 행 타입 */
@@ -311,35 +340,78 @@ export const restoreBackupData = async (
   const contacts = Array.isArray(data.contacts) ? data.contacts : [];
   const events = Array.isArray(data.events) ? data.events : [];
 
-  await db.transaction(async (tx: any) => {
-    await tx.executeSql('DELETE FROM events;');
-    await tx.executeSql('DELETE FROM contacts;');
+  return new Promise<void>((resolve, reject) => {
+    db.transaction(
+      (tx: any) => {
+        const insertContact =
+          'INSERT INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);';
+        const insertEvent =
+          'INSERT INTO events (contactId, type, amount, date, memo) VALUES (?, ?, ?, ?, ?);';
 
-    const insertContact =
-      'INSERT INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);';
-    for (const c of contacts) {
-      if (c && c.contactId != null) {
-        await tx.executeSql(insertContact, [
-          String(c.contactId),
-          String(c.displayName ?? ''),
-          String(c.phoneNumber ?? ''),
-        ]);
-      }
-    }
-
-    const insertEvent =
-      'INSERT INTO events (contactId, type, amount, date, memo) VALUES (?, ?, ?, ?, ?);';
-    for (const e of events) {
-      if (e && e.contactId != null && e.date != null) {
-        await tx.executeSql(insertEvent, [
-          String(e.contactId),
-          String(e.type ?? ''),
-          Number(e.amount) || 0,
-          String(e.date),
-          String(e.memo ?? ''),
-        ]);
-      }
-    }
+        tx.executeSql('DELETE FROM events;', [], () => {
+          tx.executeSql('DELETE FROM contacts;', [], () => {
+            let cIndex = 0;
+            const runNextContact = () => {
+              if (cIndex >= contacts.length) {
+                let eIndex = 0;
+                const runNextEvent = () => {
+                  if (eIndex >= events.length) return;
+                  const e = events[eIndex++];
+                  if (e && e.contactId != null && e.date != null) {
+                    tx.executeSql(
+                      insertEvent,
+                      [
+                        String(e.contactId),
+                        String(e.type ?? ''),
+                        Number(e.amount) || 0,
+                        String(e.date),
+                        String(e.memo ?? ''),
+                      ],
+                      () => runNextEvent(),
+                      (_tx: any, err: any) => {
+                        reject(err);
+                        return false;
+                      },
+                    );
+                  } else {
+                    runNextEvent();
+                  }
+                };
+                runNextEvent();
+                return;
+              }
+              const c = contacts[cIndex++];
+              if (c && c.contactId != null) {
+                tx.executeSql(
+                  insertContact,
+                  [
+                    String(c.contactId),
+                    String(c.displayName ?? ''),
+                    String(c.phoneNumber ?? ''),
+                  ],
+                  () => runNextContact(),
+                  (_tx: any, err: any) => {
+                    reject(err);
+                    return false;
+                  },
+                );
+              } else {
+                runNextContact();
+              }
+            };
+            runNextContact();
+          }, (_tx: any, err: any) => {
+            reject(err);
+            return false;
+          });
+        }, (_tx: any, err: any) => {
+          reject(err);
+          return false;
+        });
+      },
+      (err: any) => reject(err),
+      () => resolve(),
+    );
   });
 };
 
