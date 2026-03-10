@@ -17,6 +17,8 @@ export const HAND_DRAWN_LIGHT = {
   background: '#fdfbf7',
   foreground: '#2d2d2d',
   muted: '#e5e0d8',
+  /** 플레이스홀더·보조 텍스트용 (가독성 확보) */
+  mutedText: '#6b6560',
   accent: '#ff4d4d',
   border: '#2d2d2d',
   secondaryAccent: '#2d5da1',
@@ -29,6 +31,8 @@ export const HAND_DRAWN_DARK = {
   background: '#1a1916',
   foreground: '#e8e4dc',
   muted: '#2d2a26',
+  /** 플레이스홀더·보조 텍스트용 (다크 배경에서 가독성 확보) */
+  mutedText: '#a8a29e',
   accent: '#ff6b6b',
   border: '#4a4742',
   secondaryAccent: '#5b8fd4',

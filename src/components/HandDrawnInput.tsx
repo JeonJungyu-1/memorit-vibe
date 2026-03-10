@@ -41,6 +41,8 @@ export function HandDrawnInput({
 
   const borderColor = getThemeColor(theme, 'borderColor') || '#2d2d2d';
   const muted = getThemeColor(theme, 'gray4') || getThemeColor(theme, 'color11') || '#e5e0d8';
+  const placeholderColorFromTheme =
+    getThemeColor(theme, 'placeholderColor') || getThemeColor(theme, 'color11') || '#6b6560';
   const secondaryAccent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || '#2d5da1';
   const foreground = getThemeColor(theme, 'color') || '#2d2d2d';
   const cardBg = getThemeColor(theme, 'backgroundHover') ?? '#ffffff';
@@ -85,7 +87,7 @@ export function HandDrawnInput({
         inputStyle,
         style,
       ]}
-      placeholderTextColor={placeholderTextColor ?? muted}
+      placeholderTextColor={placeholderTextColor ?? placeholderColorFromTheme}
       onFocus={handleFocus}
       onBlur={handleBlur}
       {...rest}
