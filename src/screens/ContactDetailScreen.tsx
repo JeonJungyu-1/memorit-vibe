@@ -8,7 +8,6 @@ import {
   ActivityIndicator,
   Linking,
   Modal,
-  TextInput,
   ScrollView,
   Alert,
   Platform,
@@ -36,7 +35,18 @@ import {
   getEventDisplayText,
 } from '../constants/eventTypes';
 import { formatCurrency } from '../utils/format';
-import { getThemeColor, SPACING, RADIUS, FONT } from '../utils/themeColors';
+import {
+  getThemeColor,
+  SPACING,
+  RADIUS,
+  FONT,
+  WOBBLY_SM,
+  WOBBLY_LG,
+  HARD_SHADOW,
+} from '../utils/themeColors';
+import { HandDrawnButton } from '../components/HandDrawnButton';
+import { HandDrawnCard } from '../components/HandDrawnCard';
+import { HandDrawnInput } from '../components/HandDrawnInput';
 
 type SavedContact = {
   contactId: string;
@@ -59,35 +69,32 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
   const color = getThemeColor(theme, 'color') || '#333';
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
-  const borderColor = getThemeColor(theme, 'borderColor') || '#ddd';
-  const bgHover = getThemeColor(theme, 'backgroundHover') || '#f9f9f9';
-  /** AppShell과 동일한 방식으로 배경색 해석 (네이티브 스택 기본 배경 회피) */
   const rawBg = (theme as { background?: { val?: string } | string }).background;
   const screenBg =
     (typeof rawBg === 'object' && rawBg?.val) || (typeof rawBg === 'string' ? rawBg : '') || '#fff';
-  const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
   const red = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#c00';
 
   const themeStyles = useMemo(
     () => ({
-      backButtonText: { color: accent },
-      name: { color },
-      phone: { color: accent },
-      phoneHint: { color: colorMuted },
-      phoneEmpty: { color: colorMuted },
-      errorText: { color: colorMuted },
-      addButton: { backgroundColor: accent },
-      addButtonText: { color: '#fff' },
-      emptyEvents: { color: colorMuted },
+      backButtonText: { color: accent, fontFamily: FONT.fontFamilyBody },
+      name: { color, fontFamily: FONT.fontFamilyHeading },
+      phone: { color: accent, fontFamily: FONT.fontFamilyBody },
+      phoneHint: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
+      phoneEmpty: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
+      errorText: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
+      emptyEvents: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
       eventRow: { borderBottomColor: borderLight },
-      editEventButtonText: { color: accent },
-      deleteEventButtonText: { color: red },
-      eventDate: { color: colorMuted },
-      eventMemo: { color: colorMuted },
-      eventAmount: { color: accent },
+      editEventButtonText: { color: accent, fontFamily: FONT.fontFamilyBody },
+      deleteEventButtonText: { color: red, fontFamily: FONT.fontFamilyBody },
+      eventDate: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
+      eventMemo: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
+      eventAmount: { color: accent, fontFamily: FONT.fontFamilyBody },
+      eventType: { fontFamily: FONT.fontFamilyBody },
+      sectionTitle: { color, fontFamily: FONT.fontFamilyHeading },
+      totalExpense: { color: accent, fontFamily: FONT.fontFamilyBody },
     }),
-    [accent, color, colorMuted, borderColor, bgHover, borderLight, red],
+    [accent, color, colorMuted, borderLight, red],
   );
 
   const loadData = useCallback(async () => {
@@ -180,9 +187,11 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   if (!contact) {
     return (
       <View style={[styles.screenRoot, { backgroundColor: screenBg }]}>
-        <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-          <Text style={[styles.backButtonText, themeStyles.backButtonText]}>← 뒤로</Text>
-        </Pressable>
+        <View style={styles.backButtonWrap}>
+          <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
+            ← 뒤로
+          </HandDrawnButton>
+        </View>
         <Text style={[styles.errorText, themeStyles.errorText]}>연락처를 찾을 수 없습니다.</Text>
       </View>
     );
@@ -190,11 +199,13 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
 
   return (
     <View style={[styles.screenRoot, { backgroundColor: screenBg }]}>
-      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={[styles.backButtonText, themeStyles.backButtonText]}>← 뒤로</Text>
-      </Pressable>
+      <View style={styles.backButtonWrap}>
+        <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
+          ← 뒤로
+        </HandDrawnButton>
+      </View>
 
-      <View style={[styles.headerCard, { backgroundColor: bgHover, borderColor: borderLight }]}>
+      <HandDrawnCard style={styles.headerCard}>
         <Text style={[styles.name, themeStyles.name]}>{contact.displayName || '이름 없음'}</Text>
         {contact.phoneNumber ? (
           <Pressable style={styles.phoneRow} onPress={handleCall}>
@@ -204,14 +215,14 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
         ) : (
           <Text style={[styles.phoneEmpty, themeStyles.phoneEmpty]}>전화번호 없음</Text>
         )}
-      </View>
+      </HandDrawnCard>
 
       <View style={styles.eventsSection}>
         <View style={styles.eventsSectionHeader}>
-          <Text style={[styles.eventsSectionTitle, themeStyles.name]}>기념일</Text>
-          <Pressable style={[styles.addButton, themeStyles.addButton]} onPress={handleAddEvent}>
-            <Text style={[styles.addButtonText, themeStyles.addButtonText]}>기념일 추가</Text>
-          </Pressable>
+          <Text style={[styles.eventsSectionTitle, themeStyles.sectionTitle]}>기념일</Text>
+          <HandDrawnButton variant="primary" onPress={handleAddEvent}>
+            기념일 추가
+          </HandDrawnButton>
         </View>
         {(() => {
           const totalExpense = events.reduce(
@@ -219,7 +230,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
             0,
           );
           return totalExpense > 0 ? (
-            <Text style={[styles.totalExpense, themeStyles.eventAmount]}>
+            <Text style={[styles.totalExpense, themeStyles.totalExpense]}>
               총 경조사비: {formatCurrency(totalExpense)}
             </Text>
           ) : null;
@@ -237,7 +248,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
                 style={styles.eventRowContent}
                 onLongPress={() => handleDeleteEvent(item.id)}
               >
-                <Text style={[styles.eventType, themeStyles.name]}>
+                <Text style={[styles.eventType, themeStyles.eventType]}>
                   {getEventDisplayText(item.type)}
                 </Text>
                 <Text style={[styles.eventDate, themeStyles.eventDate]}>{item.date}</Text>
@@ -353,26 +364,33 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   const modalColor = getThemeColor(modalTheme, 'color') || '#333';
   const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#ddd';
   const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f9f9f9';
-  const modalColorMuted = getThemeColor(modalTheme, 'color11') || getThemeColor(modalTheme, 'gray11') || '#666';
-  const modalPlaceholder = getThemeColor(modalTheme, 'placeholderColor') || '#999';
 
   const modalThemeStyles = useMemo(
     () => ({
-      box: { backgroundColor: modalBg },
-      title: { color: modalColor },
-      label: { color: modalColor },
-      input: { borderColor: modalBorder },
-      dateButton: { borderColor: modalBorder, backgroundColor: modalBgHover },
-      dateButtonText: { color: modalColor },
-      typeButton: { borderColor: modalBorder },
+      box: {
+        backgroundColor: modalBg,
+        borderColor: modalBorder,
+        shadowColor: modalBorder,
+        ...WOBBLY_LG,
+        ...HARD_SHADOW,
+        borderWidth: 2,
+        shadowOpacity: 1,
+      },
+      title: { color: modalColor, fontFamily: FONT.fontFamilyHeading },
+      label: { color: modalColor, fontFamily: FONT.fontFamilyBody },
+      dateButton: {
+        borderColor: modalBorder,
+        backgroundColor: modalBgHover,
+        ...WOBBLY_SM,
+        borderWidth: 2,
+      },
+      dateButtonText: { color: modalColor, fontFamily: FONT.fontFamilyBody },
+      typeButton: { borderColor: modalBorder, ...WOBBLY_SM, borderWidth: 2 },
       typeButtonActive: { backgroundColor: modalAccent, borderColor: modalAccent },
-      typeButtonText: { color: modalColor },
-      typeButtonTextActive: { color: '#fff' },
-      cancelButtonText: { color: modalColorMuted },
-      closeButton: { backgroundColor: modalAccent },
-      closeButtonText: { color: '#fff' },
+      typeButtonText: { color: modalColor, fontFamily: FONT.fontFamilyBody },
+      typeButtonTextActive: { color: '#fff', fontFamily: FONT.fontFamilyBody },
     }),
-    [modalBg, modalColor, modalBorder, modalBgHover, modalColorMuted, modalAccent],
+    [modalBg, modalColor, modalBorder, modalBgHover, modalAccent],
   );
 
   const handleDateChange = useCallback(
@@ -486,49 +504,38 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               />
             )}
             <Text style={[modalStyles.label, modalThemeStyles.label]}>메모 (선택)</Text>
-            <TextInput
-              style={[modalStyles.input, modalStyles.inputMultiline, modalThemeStyles.input]}
+            <HandDrawnInput
               value={memo}
               onChangeText={setMemo}
               placeholder="메모"
-              placeholderTextColor={modalPlaceholder}
               multiline
+              inputStyle={modalStyles.inputMultiline}
+              style={modalStyles.inputSpacer}
             />
             <Text style={[modalStyles.label, modalThemeStyles.label]}>N주년 (선택, 숫자만)</Text>
-            <TextInput
-              style={[modalStyles.input, modalThemeStyles.input]}
+            <HandDrawnInput
               value={amount}
               onChangeText={setAmount}
               placeholder="0"
-              placeholderTextColor={modalPlaceholder}
               keyboardType="number-pad"
+              style={modalStyles.inputSpacer}
             />
             <Text style={[modalStyles.label, modalThemeStyles.label]}>경조사비 (원)</Text>
-            <TextInput
-              style={[modalStyles.input, modalThemeStyles.input]}
+            <HandDrawnInput
               value={expenseAmount}
               onChangeText={setExpenseAmount}
               placeholder="0"
-              placeholderTextColor={modalPlaceholder}
               keyboardType="number-pad"
+              style={modalStyles.inputSpacer}
             />
           </ScrollView>
           <View style={modalStyles.actions}>
-            <Pressable
-              style={[modalStyles.closeButton, modalStyles.cancelButton]}
-              onPress={onClose}
-            >
-              <Text style={[modalStyles.cancelButtonText, modalThemeStyles.cancelButtonText]}>취소</Text>
-            </Pressable>
-            <Pressable
-              style={[modalStyles.closeButton, modalThemeStyles.closeButton]}
-              onPress={handleSave}
-              disabled={saving}
-            >
-              <Text style={[modalStyles.closeButtonText, modalThemeStyles.closeButtonText]}>
-                {saving ? '저장 중…' : '저장'}
-              </Text>
-            </Pressable>
+            <HandDrawnButton variant="secondary" onPress={onClose}>
+              취소
+            </HandDrawnButton>
+            <HandDrawnButton variant="primary" onPress={handleSave} disabled={saving}>
+              {saving ? '저장 중…' : '저장'}
+            </HandDrawnButton>
           </View>
         </Pressable>
       </Pressable>
@@ -545,7 +552,6 @@ const modalStyles = StyleSheet.create({
     padding: SPACING.screenPadding,
   },
   box: {
-    borderRadius: RADIUS.lg,
     padding: SPACING.sectionGap,
     minWidth: 280,
     maxWidth: 360,
@@ -561,27 +567,20 @@ const modalStyles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 6,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: FONT.body,
+  inputSpacer: {
     marginBottom: SPACING.rowGap,
   },
+  inputMultiline: {
+    minHeight: 72,
+    textAlignVertical: 'top',
+  },
   dateButton: {
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
     paddingHorizontal: 12,
     paddingVertical: 12,
     marginBottom: SPACING.rowGap,
   },
   dateButtonText: {
     fontSize: FONT.body,
-  },
-  inputMultiline: {
-    minHeight: 72,
-    textAlignVertical: 'top',
   },
   typeRow: {
     flexDirection: 'row',
@@ -592,8 +591,6 @@ const modalStyles = StyleSheet.create({
   typeButton: {
     paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
     minHeight: 40,
     justifyContent: 'center',
   },
@@ -607,21 +604,6 @@ const modalStyles = StyleSheet.create({
     marginTop: SPACING.rowGap,
     paddingTop: SPACING.rowGap,
   },
-  cancelButton: {
-    backgroundColor: 'transparent',
-  },
-  cancelButtonText: {},
-  closeButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: RADIUS.md,
-    minHeight: 44,
-    justifyContent: 'center',
-  },
-  closeButtonText: {
-    fontSize: FONT.body,
-    fontWeight: '600',
-  },
 });
 
 const styles = StyleSheet.create({
@@ -634,21 +616,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  backButton: {
+  backButtonWrap: {
     alignSelf: 'flex-start',
-    paddingVertical: SPACING.itemGap,
-    paddingHorizontal: 0,
     marginBottom: SPACING.rowGap,
-    minHeight: SPACING.touchTargetMin,
-    justifyContent: 'center',
-  },
-  backButtonText: {
-    fontSize: FONT.body,
   },
   headerCard: {
-    padding: SPACING.rowGap,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
     marginBottom: SPACING.sectionGap,
   },
   name: {
