@@ -36,18 +36,13 @@ import {
   getEventDisplayText,
 } from '../constants/eventTypes';
 import { formatCurrency } from '../utils/format';
+import { getThemeColor, SPACING, RADIUS, FONT } from '../utils/themeColors';
 
 type SavedContact = {
   contactId: string;
   displayName: string;
   phoneNumber: string;
 };
-
-function getThemeColor(theme: ReturnType<typeof useTheme>, key: string): string {
-  const v = (theme as Record<string, unknown>)[key];
-  if (typeof v === 'object' && v !== null && 'val' in v) return (v as { val: string }).val;
-  return typeof v === 'string' ? v : '';
-}
 
 const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   navigation,
@@ -199,15 +194,17 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
         <Text style={[styles.backButtonText, themeStyles.backButtonText]}>← 뒤로</Text>
       </Pressable>
 
-      <Text style={[styles.name, themeStyles.name]}>{contact.displayName || '이름 없음'}</Text>
-      {contact.phoneNumber ? (
-        <Pressable style={styles.phoneRow} onPress={handleCall}>
-          <Text style={[styles.phone, themeStyles.phone]}>{contact.phoneNumber}</Text>
-          <Text style={[styles.phoneHint, themeStyles.phoneHint]}>탭하여 전화걸기</Text>
-        </Pressable>
-      ) : (
-        <Text style={[styles.phoneEmpty, themeStyles.phoneEmpty]}>전화번호 없음</Text>
-      )}
+      <View style={[styles.headerCard, { backgroundColor: bgHover, borderColor: borderLight }]}>
+        <Text style={[styles.name, themeStyles.name]}>{contact.displayName || '이름 없음'}</Text>
+        {contact.phoneNumber ? (
+          <Pressable style={styles.phoneRow} onPress={handleCall}>
+            <Text style={[styles.phone, themeStyles.phone]}>{contact.phoneNumber}</Text>
+            <Text style={[styles.phoneHint, themeStyles.phoneHint]}>탭하여 전화걸기</Text>
+          </Pressable>
+        ) : (
+          <Text style={[styles.phoneEmpty, themeStyles.phoneEmpty]}>전화번호 없음</Text>
+        )}
+      </View>
 
       <View style={styles.eventsSection}>
         <View style={styles.eventsSectionHeader}>
@@ -542,90 +539,95 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
+    padding: SPACING.screenPadding,
   },
   box: {
-    borderRadius: 12,
-    padding: 24,
+    borderRadius: RADIUS.lg,
+    padding: SPACING.sectionGap,
     minWidth: 280,
     maxWidth: 360,
-    maxHeight: '80%',
+    maxHeight: '82%',
   },
   title: {
-    fontSize: 18,
+    fontSize: FONT.sectionTitle,
     fontWeight: '600',
-    marginBottom: 16,
+    marginBottom: SPACING.rowGap,
   },
   label: {
-    fontSize: 14,
+    fontSize: FONT.bodySmall,
     fontWeight: '500',
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-    marginBottom: 16,
+    paddingVertical: 12,
+    fontSize: FONT.body,
+    marginBottom: SPACING.rowGap,
   },
   dateButton: {
     borderWidth: 1,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     paddingHorizontal: 12,
     paddingVertical: 12,
-    marginBottom: 16,
+    marginBottom: SPACING.rowGap,
   },
   dateButtonText: {
-    fontSize: 16,
+    fontSize: FONT.body,
   },
   inputMultiline: {
-    minHeight: 60,
+    minHeight: 72,
     textAlignVertical: 'top',
   },
   typeRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 16,
+    gap: SPACING.itemGap,
+    marginBottom: SPACING.rowGap,
   },
   typeButton: {
-    paddingVertical: 8,
+    paddingVertical: 10,
     paddingHorizontal: 14,
-    borderRadius: 8,
+    borderRadius: RADIUS.md,
     borderWidth: 1,
+    minHeight: 40,
+    justifyContent: 'center',
   },
   typeButtonText: {
-    fontSize: 14,
+    fontSize: FONT.bodySmall,
   },
   actions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
-    marginTop: 8,
+    gap: SPACING.rowGap,
+    marginTop: SPACING.rowGap,
+    paddingTop: SPACING.rowGap,
   },
   cancelButton: {
     backgroundColor: 'transparent',
   },
-  cancelButtonText: {
-  },
+  cancelButtonText: {},
   closeButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: RADIUS.md,
+    minHeight: 44,
+    justifyContent: 'center',
   },
   closeButtonText: {
-    fontSize: 15,
+    fontSize: FONT.body,
+    fontWeight: '600',
   },
 });
 
 const styles = StyleSheet.create({
   screenRoot: {
     flex: 1,
-    padding: 16,
+    padding: SPACING.screenPadding,
   },
   loadingContainer: {
     flex: 1,
@@ -634,34 +636,42 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    paddingVertical: 8,
+    paddingVertical: SPACING.itemGap,
     paddingHorizontal: 0,
-    marginBottom: 16,
+    marginBottom: SPACING.rowGap,
+    minHeight: SPACING.touchTargetMin,
+    justifyContent: 'center',
   },
   backButtonText: {
-    fontSize: 16,
+    fontSize: FONT.body,
+  },
+  headerCard: {
+    padding: SPACING.rowGap,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    marginBottom: SPACING.sectionGap,
   },
   name: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 8,
+    fontSize: FONT.title,
+    fontWeight: '700',
+    marginBottom: SPACING.itemGap,
   },
   phoneRow: {
-    marginBottom: 24,
+    marginBottom: 0,
   },
   phone: {
-    fontSize: 16,
+    fontSize: FONT.body,
   },
   phoneHint: {
-    fontSize: 12,
+    fontSize: FONT.caption,
     marginTop: 4,
   },
   phoneEmpty: {
-    fontSize: 14,
-    marginBottom: 24,
+    fontSize: FONT.bodySmall,
+    marginBottom: 0,
   },
   errorText: {
-    fontSize: 16,
+    fontSize: FONT.body,
   },
   eventsSection: {
     flex: 1,
@@ -670,70 +680,80 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: SPACING.rowGap,
   },
   eventsSectionTitle: {
-    fontSize: 18,
+    fontSize: FONT.sectionTitle,
     fontWeight: '600',
   },
   totalExpense: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: FONT.bodySmall,
+    marginBottom: SPACING.itemGap,
   },
   addButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 14,
-    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.md,
+    minHeight: SPACING.touchTargetMin,
+    justifyContent: 'center',
   },
   addButtonText: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: FONT.bodySmall,
+    fontWeight: '600',
   },
   eventsList: {
     flex: 1,
   },
   emptyEvents: {
-    fontSize: 14,
-    paddingVertical: 24,
+    fontSize: FONT.bodySmall,
+    paddingVertical: SPACING.sectionGap,
+    textAlign: 'center',
   },
   eventRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingVertical: SPACING.rowGap,
+    paddingHorizontal: SPACING.itemGap,
     borderBottomWidth: 1,
+    minHeight: 56,
   },
   eventRowContent: {
     flex: 1,
   },
   editEventButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minHeight: 36,
+    justifyContent: 'center',
   },
   editEventButtonText: {
-    fontSize: 13,
-  },
-  deleteEventButton: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-  },
-  deleteEventButtonText: {
-    fontSize: 13,
-  },
-  eventType: {
-    fontSize: 16,
+    fontSize: FONT.bodySmall,
     fontWeight: '500',
   },
+  deleteEventButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    minHeight: 36,
+    justifyContent: 'center',
+  },
+  deleteEventButtonText: {
+    fontSize: FONT.bodySmall,
+    fontWeight: '500',
+  },
+  eventType: {
+    fontSize: FONT.body,
+    fontWeight: '600',
+  },
   eventDate: {
-    fontSize: 14,
+    fontSize: FONT.bodySmall,
     marginTop: 4,
   },
   eventMemo: {
-    fontSize: 13,
+    fontSize: FONT.bodySmall,
     marginTop: 4,
   },
   eventAmount: {
-    fontSize: 12,
+    fontSize: FONT.caption,
     marginTop: 4,
   },
 });

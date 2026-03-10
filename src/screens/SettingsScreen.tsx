@@ -24,6 +24,7 @@ import {
 } from '../utils/backupRestore';
 import { useThemeMode } from '../contexts/ThemeContext';
 import type { ThemeMode } from '../utils/themeSettings';
+import { SPACING, RADIUS, FONT } from '../utils/themeColors';
 
 const DAYS_OPTIONS = [
   { value: 0, label: '당일' },
@@ -53,23 +54,30 @@ function createThemeStyles(t: ThemeColors) {
   return {
     container: {
       flex: 1,
-      padding: 16,
+      padding: SPACING.screenPadding,
       backgroundColor: t.background,
     },
-    backButtonText: { fontSize: 16, color: t.accent },
+    backButtonText: { fontSize: FONT.body, color: t.accent },
     title: { color: t.color },
-    sectionTitle: { fontSize: 18, fontWeight: '600' as const, marginBottom: 12, color: t.color },
-    rowLabel: { fontSize: 16, color: t.color },
+    sectionTitle: {
+      fontSize: FONT.sectionTitle,
+      fontWeight: '600' as const,
+      marginBottom: SPACING.rowGap,
+      color: t.color,
+    },
+    rowLabel: { fontSize: FONT.body, color: t.color },
     dayChip: {
-      paddingVertical: 8,
-      paddingHorizontal: 14,
-      borderRadius: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 16,
+      borderRadius: RADIUS.md,
       borderWidth: 1,
       borderColor: t.borderColor,
       backgroundColor: t.backgroundHover,
+      minHeight: 40,
+      justifyContent: 'center',
     },
     dayChipActive: { backgroundColor: t.accent, borderColor: t.accent },
-    dayChipText: { fontSize: 14, color: t.color },
+    dayChipText: { fontSize: FONT.bodySmall, color: t.color },
     dayChipTextActive: { color: t.accentForeground },
   };
 }
@@ -287,13 +295,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
           <Pressable
             style={[
               themeStyles.dayChip,
+              themeStyles.dayChipActive,
               styles.backupButton,
               backupRestoreBusy && styles.buttonDisabled,
             ]}
             onPress={handleExportBackup}
             disabled={backupRestoreBusy}
           >
-            <Text style={[themeStyles.dayChipText]}>백업하여 공유</Text>
+            <Text style={[themeStyles.dayChipTextActive]}>백업하여 공유</Text>
           </Pressable>
           <Pressable
             style={[
@@ -315,7 +324,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    padding: SPACING.screenPadding,
   },
   loadingContainer: {
     flex: 1,
@@ -324,58 +333,62 @@ const styles = StyleSheet.create({
   },
   backButton: {
     alignSelf: 'flex-start',
-    paddingVertical: 8,
+    paddingVertical: SPACING.itemGap,
     paddingHorizontal: 0,
-    marginBottom: 16,
+    marginBottom: SPACING.rowGap,
+    minHeight: SPACING.touchTargetMin,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 24,
+    fontSize: FONT.title,
+    fontWeight: '700',
+    marginBottom: SPACING.sectionGap,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: SPACING.sectionGap,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: FONT.sectionTitle,
     fontWeight: '600',
-    marginBottom: 12,
+    marginBottom: SPACING.rowGap,
   },
   themeChips: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.itemGap,
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    paddingVertical: SPACING.rowGap,
     paddingHorizontal: 0,
+    minHeight: SPACING.touchTargetMin,
   },
   rowLabel: {
-    fontSize: 16,
+    fontSize: FONT.body,
   },
   daysRow: {
-    paddingVertical: 8,
+    paddingVertical: SPACING.itemGap,
     paddingHorizontal: 0,
   },
   daysOptions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 8,
+    gap: SPACING.itemGap,
+    marginTop: SPACING.itemGap,
   },
   backupDescription: {
-    marginBottom: 12,
+    marginBottom: SPACING.rowGap,
+    fontSize: FONT.bodySmall,
   },
   backupButtons: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
+    gap: SPACING.itemGap,
   },
   backupButton: {
-    minWidth: 140,
+    minWidth: 160,
   },
   buttonDisabled: {
     opacity: 0.6,

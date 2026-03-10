@@ -23,6 +23,7 @@ import {
 } from '../db/Database';
 import { cancelEventNotification } from '../services/notificationService';
 import { getEventDisplayText } from '../constants/eventTypes';
+import { getThemeColor, SPACING, RADIUS, FONT } from '../utils/themeColors';
 
 const UPCOMING_EVENTS_LIMIT = 10;
 
@@ -51,12 +52,6 @@ function matchContact(contact: SavedContact, normalizedQuery: string): boolean {
   const name = normalizeSearchQuery(contact.displayName ?? '');
   const phone = normalizeSearchQuery(contact.phoneNumber ?? '');
   return name.includes(normalizedQuery) || phone.includes(normalizedQuery);
-}
-
-function getThemeColor(theme: ReturnType<typeof useTheme>, key: string): string {
-  const v = (theme as Record<string, unknown>)[key];
-  if (typeof v === 'object' && v !== null && 'val' in v) return (v as { val: string }).val;
-  return typeof v === 'string' ? v : '';
 }
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
@@ -198,8 +193,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderListHeader = () =>
     upcomingEvents.length > 0 ? (
-      <View style={[styles.upcomingSection, themeStyles.upcomingSection]}>
-        <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>다가오는 기념일</Text>
+      <View style={[styles.upcomingCard, themeStyles.upcomingSection]}>
+        <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
+          다가오는 기념일
+        </Text>
         {upcomingEvents.map(item => (
           <Pressable
             key={`${item.id}-${item.contactId}`}
@@ -226,16 +223,23 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     ) : null;
 
   return (
-    <Container flex={1} padding="$4" backgroundColor="$background">
+    <Container flex={1} padding={SPACING.screenPadding} backgroundColor="$background">
       <View style={styles.headerRow}>
         <Text style={[styles.header, { color }]}>Memorit</Text>
-        <Pressable style={styles.settingsButton} onPress={handleOpenSettings}>
+        <Pressable
+          style={styles.settingsButton}
+          onPress={handleOpenSettings}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+        >
           <Text style={[styles.settingsButtonText, themeStyles.settingsButtonText]}>설정</Text>
         </Pressable>
       </View>
       <Text style={[styles.summary, themeStyles.summary]}>{contacts.length}명의 연락처</Text>
 
-      <Pressable style={[styles.reselectButton, themeStyles.reselectButton]} onPress={handleReselectContacts}>
+      <Pressable
+        style={[styles.reselectButton, themeStyles.reselectButton]}
+        onPress={handleReselectContacts}
+      >
         <Text style={styles.reselectButtonText}>연락처 다시 선택</Text>
       </Pressable>
 
@@ -280,82 +284,91 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 8,
+    marginBottom: SPACING.itemGap,
   },
   header: {
-    fontSize: 24,
-    fontWeight: 'bold',
+    fontSize: FONT.title,
+    fontWeight: '700',
   },
   settingsButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    minHeight: SPACING.touchTargetMin,
+    justifyContent: 'center',
   },
   settingsButtonText: {
-    fontSize: 15,
+    fontSize: FONT.body,
   },
   summary: {
-    fontSize: 16,
-    marginBottom: 16,
+    fontSize: FONT.body,
+    marginBottom: SPACING.rowGap,
   },
   searchInput: {
-    height: 44,
+    height: SPACING.touchTargetMin,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginBottom: 16,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 14,
+    fontSize: FONT.body,
+    marginBottom: SPACING.rowGap,
   },
   reselectButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: RADIUS.md,
     alignSelf: 'flex-start',
-    marginBottom: 16,
+    marginBottom: SPACING.rowGap,
+    minHeight: SPACING.touchTargetMin,
+    justifyContent: 'center',
   },
   reselectButtonText: {
     color: 'white',
-    fontSize: 15,
+    fontSize: FONT.body,
     fontWeight: '600',
   },
-  upcomingSection: {
-    marginBottom: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+  upcomingCard: {
+    marginBottom: SPACING.rowGap,
+    paddingVertical: SPACING.rowGap,
+    paddingHorizontal: SPACING.itemGap,
     borderTopWidth: 1,
+    borderRadius: RADIUS.md,
   },
   upcomingSectionTitle: {
-    fontSize: 16,
+    fontSize: FONT.sectionTitle,
     fontWeight: '600',
-    marginBottom: 10,
+    marginBottom: SPACING.itemGap,
   },
   upcomingRow: {
-    paddingVertical: 10,
-    paddingHorizontal: 4,
+    paddingVertical: 12,
+    paddingHorizontal: SPACING.itemGap,
     borderBottomWidth: 1,
+    minHeight: 52,
+    justifyContent: 'center',
   },
   upcomingDate: {
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: FONT.bodySmall,
+    fontWeight: '600',
   },
   upcomingLabel: {
-    fontSize: 14,
-    marginTop: 2,
+    fontSize: FONT.bodySmall,
+    marginTop: 4,
   },
   upcomingMemo: {
-    fontSize: 12,
-    marginTop: 2,
+    fontSize: FONT.caption,
+    marginTop: 4,
   },
   contactRow: {
-    paddingVertical: 12,
-    paddingHorizontal: 4,
+    paddingVertical: SPACING.rowGap,
+    paddingHorizontal: SPACING.itemGap,
     borderBottomWidth: 1,
+    minHeight: 56,
+    justifyContent: 'center',
   },
   contactName: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FONT.body,
+    fontWeight: '600',
   },
   phone: {
-    fontSize: 14,
+    fontSize: FONT.bodySmall,
     marginTop: 4,
   },
   list: {

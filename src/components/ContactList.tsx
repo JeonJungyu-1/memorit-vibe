@@ -7,7 +7,6 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
-  Button,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -23,6 +22,7 @@ import {
   saveContacts,
   getSavedContacts,
 } from '../db/Database';
+import { getThemeColor, SPACING, RADIUS, FONT } from '../utils/themeColors';
 
 type ContactListNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -48,12 +48,6 @@ function getSearchableText(item: {
   return `${name} ${phone}`;
 }
 
-function getThemeColor(theme: ReturnType<typeof useTheme>, key: string): string {
-  const v = (theme as Record<string, unknown>)[key];
-  if (typeof v === 'object' && v !== null && 'val' in v) return (v as { val: string }).val;
-  return typeof v === 'string' ? v : '';
-}
-
 const ContactList: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation<ContactListNavigationProp>();
@@ -64,13 +58,19 @@ const ContactList: React.FC = () => {
   const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
 
+  const color = getThemeColor(theme, 'color') || '#333';
   const themeStyles = useMemo(
     () => ({
       searchInput: { borderColor, backgroundColor: bgHover },
       contactRow: { borderBottomColor: borderLight },
       phone: { color: colorMuted },
+      contactName: { color },
+      primaryButton: { backgroundColor: accent },
+      primaryButtonText: { color: '#fff' },
+      secondaryButton: { borderColor, backgroundColor: bgHover },
+      secondaryButtonText: { color },
     }),
-    [borderColor, bgHover, borderLight, colorMuted],
+    [borderColor, bgHover, borderLight, colorMuted, color, accent],
   );
 
   const onPermissionDenied = useCallback(() => {
@@ -186,21 +186,50 @@ const ContactList: React.FC = () => {
 
   return (
     <Container>
-      <Text style={styles.title}>연락처 리스트</Text>
+      <Text style={[styles.title, { color }]}>연락처 선택</Text>
 
       {mode === 'select' ? (
         <View style={styles.selectBar}>
-          <Button title="전체선택" onPress={selectAll} />
-          <Button title="선택해제" onPress={clearSelection} />
-          <Button
-            title={`가져오기 (${selectedCount})`}
+          <Pressable
+            style={[styles.secondaryButton, themeStyles.secondaryButton]}
+            onPress={selectAll}
+          >
+            <Text style={[styles.secondaryButtonText, themeStyles.secondaryButtonText]}>
+              전체선택
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[styles.secondaryButton, themeStyles.secondaryButton]}
+            onPress={clearSelection}
+          >
+            <Text style={[styles.secondaryButtonText, themeStyles.secondaryButtonText]}>
+              선택해제
+            </Text>
+          </Pressable>
+          <Pressable
+            style={[
+              styles.primaryButton,
+              themeStyles.primaryButton,
+              selectedCount === 0 && styles.buttonDisabled,
+            ]}
             onPress={importSelected}
             disabled={selectedCount === 0}
-          />
+          >
+            <Text style={[styles.primaryButtonText, themeStyles.primaryButtonText]}>
+              가져오기 ({selectedCount})
+            </Text>
+          </Pressable>
         </View>
       ) : (
         <View style={styles.selectBar}>
-          <Button title="다시 선택" onPress={() => setMode('select')} />
+          <Pressable
+            style={[styles.primaryButton, themeStyles.primaryButton]}
+            onPress={() => setMode('select')}
+          >
+            <Text style={[styles.primaryButtonText, themeStyles.primaryButtonText]}>
+              다시 선택
+            </Text>
+          </Pressable>
         </View>
       )}
 
@@ -230,7 +259,7 @@ const ContactList: React.FC = () => {
               </Checkbox>
             )}
             <YStack flex={1}>
-              <Text style={styles.contactName}>
+              <Text style={[styles.contactName, themeStyles.contactName]}>
                 {item.displayName || '이름 없음'}
               </Text>
               {Array.isArray(item.phoneNumbers) &&
@@ -251,7 +280,7 @@ const ContactList: React.FC = () => {
 
 const Container = styled(YStack, {
   flex: 1,
-  padding: '$4',
+  padding: SPACING.screenPadding,
   backgroundColor: '$background',
 });
 
@@ -268,38 +297,68 @@ const Checkbox = styled(YStack, {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 12,
+    fontSize: FONT.title,
+    fontWeight: '700',
+    marginBottom: SPACING.rowGap,
   },
   selectBar: {
     flexDirection: 'row',
-    gap: 8,
-    marginBottom: 8,
+    flexWrap: 'wrap',
+    gap: SPACING.itemGap,
+    marginBottom: SPACING.rowGap,
+  },
+  primaryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: RADIUS.md,
+    minHeight: SPACING.touchTargetMin,
+    justifyContent: 'center',
+  },
+  primaryButtonText: {
+    fontSize: FONT.bodySmall,
+    fontWeight: '600',
+  },
+  secondaryButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: RADIUS.md,
+    borderWidth: 1,
+    minHeight: SPACING.touchTargetMin,
+    justifyContent: 'center',
+  },
+  secondaryButtonText: {
+    fontSize: FONT.bodySmall,
+    fontWeight: '500',
+  },
+  buttonDisabled: {
+    opacity: 0.5,
   },
   searchInput: {
-    height: 44,
+    height: SPACING.touchTargetMin,
     borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    marginBottom: 12,
+    borderRadius: RADIUS.md,
+    paddingHorizontal: 14,
+    fontSize: FONT.body,
+    marginBottom: SPACING.rowGap,
   },
   contactRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 8,
+    paddingVertical: SPACING.rowGap,
+    paddingHorizontal: SPACING.itemGap,
     borderBottomWidth: 1,
+    minHeight: 56,
   },
   contactName: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: FONT.body,
+    fontWeight: '600',
   },
   checkMark: {
-    fontSize: 14,
+    fontSize: FONT.bodySmall,
   },
   phone: {
-    fontSize: 14,
+    fontSize: FONT.bodySmall,
+    marginTop: 4,
   },
 });
 
