@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   Text,
-  TextInput,
   StyleSheet,
   ActivityIndicator,
   Pressable,
@@ -23,7 +22,10 @@ import {
 } from '../db/Database';
 import { cancelEventNotification } from '../services/notificationService';
 import { getEventDisplayText } from '../constants/eventTypes';
-import { getThemeColor, SPACING, RADIUS, FONT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
+import { HandDrawnButton } from '../components/HandDrawnButton';
+import { HandDrawnCard } from '../components/HandDrawnCard';
+import { HandDrawnInput } from '../components/HandDrawnInput';
 
 const UPCOMING_EVENTS_LIMIT = 10;
 
@@ -63,28 +65,17 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
-  const color = getThemeColor(theme, 'color') || '#333';
+  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+  const color = getThemeColor(theme, 'color') || '#2d2d2d';
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
-  const borderColor = getThemeColor(theme, 'borderColor') || '#ddd';
-  const bgHover = getThemeColor(theme, 'backgroundHover') || '#fafafa';
-  const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
   const borderLighter = getThemeColor(theme, 'gray3') || '#f0f0f0';
 
   const themeStyles = useMemo(
     () => ({
-      settingsButtonText: { color: accent },
       summary: { color: colorMuted },
-      searchInput: {
-        borderColor,
-        backgroundColor: bgHover,
-      },
-      searchInputPlaceholder: placeholderColor,
-      reselectButton: { backgroundColor: accent },
-      upcomingSection: { borderTopColor: borderLight },
-      upcomingSectionTitle: { color },
       upcomingRow: { borderBottomColor: borderLighter },
+      upcomingSectionTitle: { color },
       upcomingDate: { color: accent },
       upcomingLabel: { color },
       upcomingMemo: { color: colorMuted },
@@ -92,16 +83,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       contactName: { color },
       phone: { color: colorMuted },
     }),
-    [
-      accent,
-      color,
-      colorMuted,
-      borderColor,
-      bgHover,
-      placeholderColor,
-      borderLight,
-      borderLighter,
-    ],
+    [accent, color, colorMuted, borderLight, borderLighter],
   );
 
   const filteredContacts = useMemo(() => {
@@ -193,7 +175,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderListHeader = () =>
     upcomingEvents.length > 0 ? (
-      <View style={[styles.upcomingCard, themeStyles.upcomingSection]}>
+      <HandDrawnCard style={styles.upcomingCardWrap}>
         <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
           다가오는 기념일
         </Text>
@@ -219,36 +201,30 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             ) : null}
           </Pressable>
         ))}
-      </View>
+      </HandDrawnCard>
     ) : null;
 
   return (
     <Container flex={1} padding={SPACING.screenPadding} backgroundColor="$background">
       <View style={styles.headerRow}>
         <Text style={[styles.header, { color }]}>Memorit</Text>
-        <Pressable
-          style={styles.settingsButton}
-          onPress={handleOpenSettings}
-          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        >
-          <Text style={[styles.settingsButtonText, themeStyles.settingsButtonText]}>설정</Text>
-        </Pressable>
+        <HandDrawnButton variant="secondary" onPress={handleOpenSettings}>
+          설정
+        </HandDrawnButton>
       </View>
       <Text style={[styles.summary, themeStyles.summary]}>{contacts.length}명의 연락처</Text>
 
-      <Pressable
-        style={[styles.reselectButton, themeStyles.reselectButton]}
-        onPress={handleReselectContacts}
-      >
-        <Text style={styles.reselectButtonText}>연락처 다시 선택</Text>
-      </Pressable>
+      <View style={styles.reselectButtonWrap}>
+        <HandDrawnButton variant="primary" onPress={handleReselectContacts}>
+          연락처 다시 선택
+        </HandDrawnButton>
+      </View>
 
-      <TextInput
-        style={[styles.searchInput, themeStyles.searchInput]}
+      <HandDrawnInput
         placeholder="이름 또는 번호로 검색"
-        placeholderTextColor={themeStyles.searchInputPlaceholder}
         value={searchQuery}
         onChangeText={setSearchQuery}
+        style={styles.searchInput}
       />
 
       <FlatList
@@ -289,52 +265,27 @@ const styles = StyleSheet.create({
   header: {
     fontSize: FONT.title,
     fontWeight: '700',
-  },
-  settingsButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    minHeight: SPACING.touchTargetMin,
-    justifyContent: 'center',
-  },
-  settingsButtonText: {
-    fontSize: FONT.body,
+    fontFamily: FONT.fontFamilyHeading,
   },
   summary: {
     fontSize: FONT.body,
+    fontFamily: FONT.fontFamilyBody,
+    marginBottom: SPACING.rowGap,
+  },
+  reselectButtonWrap: {
+    alignSelf: 'flex-start',
     marginBottom: SPACING.rowGap,
   },
   searchInput: {
-    height: SPACING.touchTargetMin,
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: 14,
-    fontSize: FONT.body,
     marginBottom: SPACING.rowGap,
   },
-  reselectButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: RADIUS.md,
-    alignSelf: 'flex-start',
+  upcomingCardWrap: {
     marginBottom: SPACING.rowGap,
-    minHeight: SPACING.touchTargetMin,
-    justifyContent: 'center',
-  },
-  reselectButtonText: {
-    color: 'white',
-    fontSize: FONT.body,
-    fontWeight: '600',
-  },
-  upcomingCard: {
-    marginBottom: SPACING.rowGap,
-    paddingVertical: SPACING.rowGap,
-    paddingHorizontal: SPACING.itemGap,
-    borderTopWidth: 1,
-    borderRadius: RADIUS.md,
   },
   upcomingSectionTitle: {
     fontSize: FONT.sectionTitle,
     fontWeight: '600',
+    fontFamily: FONT.fontFamilyHeading,
     marginBottom: SPACING.itemGap,
   },
   upcomingRow: {
@@ -347,13 +298,16 @@ const styles = StyleSheet.create({
   upcomingDate: {
     fontSize: FONT.bodySmall,
     fontWeight: '600',
+    fontFamily: FONT.fontFamilyBody,
   },
   upcomingLabel: {
     fontSize: FONT.bodySmall,
+    fontFamily: FONT.fontFamilyBody,
     marginTop: 4,
   },
   upcomingMemo: {
     fontSize: FONT.caption,
+    fontFamily: FONT.fontFamilyBody,
     marginTop: 4,
   },
   contactRow: {
@@ -366,9 +320,11 @@ const styles = StyleSheet.create({
   contactName: {
     fontSize: FONT.body,
     fontWeight: '600',
+    fontFamily: FONT.fontFamilyBody,
   },
   phone: {
     fontSize: FONT.bodySmall,
+    fontFamily: FONT.fontFamilyBody,
     marginTop: 4,
   },
   list: {
