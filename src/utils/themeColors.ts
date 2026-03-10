@@ -99,13 +99,16 @@ export const RADIUS = {
   lg: 14,
 } as const;
 
-/** 폰트 크기 및 Hand-Drawn 폰트 패밀리 */
+/**
+ * 폰트 크기 및 Hand-Drawn 폰트 패밀리.
+ * fontFamily 값은 expo-font로 로드한 폰트 이름과 동일해야 함 (Kalam_700Bold, PatrickHand_400Regular).
+ */
 export const FONT = {
   title: 22,
   sectionTitle: 17,
   body: 16,
   bodySmall: 14,
   caption: 12,
-  fontFamilyHeading: 'Kalam',
-  fontFamilyBody: 'Patrick Hand',
+  fontFamilyHeading: 'Kalam_700Bold',
+  fontFamilyBody: 'PatrickHand_400Regular',
 } as const;
