@@ -1,10 +1,12 @@
 import RNBlobUtil from 'react-native-blob-util';
 import Share from 'react-native-share';
 import {
-  pickSingle,
-  isCancel,
+  pick,
+  keepLocalCopy,
   types as docPickerTypes,
-} from 'react-native-document-picker';
+  errorCodes,
+  isErrorWithCode,
+} from '@react-native-documents/picker';
 import type { BackupData } from '../db/Database';
 import {
   getDBConnection,
@@ -54,14 +56,27 @@ export async function exportAndShareBackup(): Promise<void> {
 export async function pickAndRestoreBackup(): Promise<{
   contactsCount: number;
 }> {
-  const result = await pickSingle({
+  const [pickedFile] = await pick({
     type: [docPickerTypes.json, docPickerTypes.plainText],
-    copyTo: 'cachesDirectory',
+    allowMultiSelection: false,
   });
 
-  const pathToRead = result.fileCopyUri ?? result.uri;
+  const [copyResult] = await keepLocalCopy({
+    files: [
+      {
+        uri: pickedFile.uri,
+        fileName: pickedFile.name ?? 'backup.json',
+      },
+    ],
+    destination: 'cachesDirectory',
+  });
+
+  const pathToRead =
+    copyResult.status === 'success' ? copyResult.localUri : null;
   if (!pathToRead) {
-    throw new Error('선택한 파일을 읽을 수 없습니다.');
+    const message =
+      copyResult.status === 'error' ? copyResult.copyError : '선택한 파일을 읽을 수 없습니다.';
+    throw new Error(message);
   }
 
   const normalizedPath = pathToRead.replace(/^file:\/\//, '');
@@ -78,5 +93,5 @@ export async function pickAndRestoreBackup(): Promise<{
 
 /** document picker 사용자 취소 여부 */
 export function isDocumentPickerCancel(err: unknown): boolean {
-  return isCancel(err);
+  return isErrorWithCode(err) && err.code === errorCodes.OPERATION_CANCELED;
 }
