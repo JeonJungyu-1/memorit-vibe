@@ -24,7 +24,9 @@ import {
 } from '../utils/backupRestore';
 import { useThemeMode } from '../contexts/ThemeContext';
 import type { ThemeMode } from '../utils/themeSettings';
-import { SPACING, RADIUS, FONT } from '../utils/themeColors';
+import { SPACING, FONT, WOBBLY_SM, HARD_SHADOW } from '../utils/themeColors';
+import { HandDrawnButton } from '../components/HandDrawnButton';
+import { HandDrawnCard } from '../components/HandDrawnCard';
 
 const DAYS_OPTIONS = [
   { value: 0, label: '당일' },
@@ -57,28 +59,42 @@ function createThemeStyles(t: ThemeColors) {
       padding: SPACING.screenPadding,
       backgroundColor: t.background,
     },
-    backButtonText: { fontSize: FONT.body, color: t.accent },
-    title: { color: t.color },
+    title: {
+      color: t.color,
+      fontFamily: FONT.fontFamilyHeading,
+    },
     sectionTitle: {
       fontSize: FONT.sectionTitle,
       fontWeight: '600' as const,
       marginBottom: SPACING.rowGap,
       color: t.color,
+      fontFamily: FONT.fontFamilyHeading,
     },
-    rowLabel: { fontSize: FONT.body, color: t.color },
-    dayChip: {
+    rowLabel: {
+      fontSize: FONT.body,
+      color: t.color,
+      fontFamily: FONT.fontFamilyBody,
+    },
+    chip: {
+      ...WOBBLY_SM,
       paddingVertical: 10,
       paddingHorizontal: 16,
-      borderRadius: RADIUS.md,
-      borderWidth: 1,
+      borderWidth: 2,
       borderColor: t.borderColor,
       backgroundColor: t.backgroundHover,
       minHeight: 40,
       justifyContent: 'center',
+      shadowColor: t.borderColor,
+      ...HARD_SHADOW,
+      shadowOpacity: 1,
     },
-    dayChipActive: { backgroundColor: t.accent, borderColor: t.accent },
-    dayChipText: { fontSize: FONT.bodySmall, color: t.color },
-    dayChipTextActive: { color: t.accentForeground },
+    chipActive: { backgroundColor: t.accent, borderColor: t.accent },
+    chipText: {
+      fontSize: FONT.bodySmall,
+      color: t.color,
+      fontFamily: FONT.fontFamilyBody,
+    },
+    chipTextActive: { color: t.accentForeground },
   };
 }
 
@@ -214,66 +230,35 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     );
   }
 
+  const accentFg = themeStyles.chipTextActive.color;
+
   return (
     <View style={[styles.container, themeStyles.container]}>
-      <Pressable style={styles.backButton} onPress={() => navigation.goBack()}>
-        <Text style={themeStyles.backButtonText}>← 뒤로</Text>
-      </Pressable>
+      <View style={styles.backButton}>
+        <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
+          ← 뒤로
+        </HandDrawnButton>
+      </View>
 
       <Text style={[styles.title, themeStyles.title]}>설정</Text>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>테마</Text>
-        <View style={styles.themeChips}>
-          {THEME_OPTIONS.map(({ value, label }) => (
-            <Pressable
-              key={value}
-              style={[
-                themeStyles.dayChip,
-                themeMode === value && themeStyles.dayChipActive,
-              ]}
-              onPress={() => setThemeMode(value)}
-            >
-              <Text
-                style={[
-                  themeStyles.dayChipText,
-                  themeMode === value && themeStyles.dayChipTextActive,
-                ]}
-              >
-                {label}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      </View>
-
-      <View style={styles.section}>
-        <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>기념일 알림</Text>
-        <View style={styles.row}>
-          <Text style={[styles.rowLabel, themeStyles.rowLabel]}>알림 사용</Text>
-          <Switch
-            value={notificationsEnabled}
-            onValueChange={handleToggleNotifications}
-            trackColor={{ false: (theme.gray8?.val ?? theme.gray8 ?? '#ccc'), true: accent }}
-            thumbColor={themeStyles.dayChipTextActive.color}
-          />
-        </View>
-        <View style={styles.daysRow}>
-          <Text style={[styles.rowLabel, themeStyles.rowLabel]}>알림 시점</Text>
-          <View style={styles.daysOptions}>
-            {DAYS_OPTIONS.map(({ value, label }) => (
+        <HandDrawnCard>
+          <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>테마</Text>
+          <View style={styles.themeChips}>
+            {THEME_OPTIONS.map(({ value, label }) => (
               <Pressable
                 key={value}
                 style={[
-                  themeStyles.dayChip,
-                  daysBefore === value && themeStyles.dayChipActive,
+                  themeStyles.chip,
+                  themeMode === value && themeStyles.chipActive,
                 ]}
-                onPress={() => handleSelectDaysBefore(value)}
+                onPress={() => setThemeMode(value)}
               >
                 <Text
                   style={[
-                    themeStyles.dayChipText,
-                    daysBefore === value && themeStyles.dayChipTextActive,
+                    themeStyles.chipText,
+                    themeMode === value && themeStyles.chipTextActive,
                   ]}
                 >
                   {label}
@@ -281,41 +266,75 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </Pressable>
             ))}
           </View>
-        </View>
+        </HandDrawnCard>
       </View>
 
       <View style={styles.section}>
-        <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
-          데이터 백업/복원
-        </Text>
-        <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.backupDescription]}>
-          기기 변경 또는 앱 재설치 시 백업 파일로 데이터를 복원할 수 있습니다.
-        </Text>
-        <View style={styles.backupButtons}>
-          <Pressable
-            style={[
-              themeStyles.dayChip,
-              themeStyles.dayChipActive,
-              styles.backupButton,
-              backupRestoreBusy && styles.buttonDisabled,
-            ]}
-            onPress={handleExportBackup}
-            disabled={backupRestoreBusy}
-          >
-            <Text style={[themeStyles.dayChipTextActive]}>백업하여 공유</Text>
-          </Pressable>
-          <Pressable
-            style={[
-              themeStyles.dayChip,
-              styles.backupButton,
-              backupRestoreBusy && styles.buttonDisabled,
-            ]}
-            onPress={handleRestoreBackup}
-            disabled={backupRestoreBusy}
-          >
-            <Text style={[themeStyles.dayChipText]}>백업 파일에서 복원</Text>
-          </Pressable>
-        </View>
+        <HandDrawnCard>
+          <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>기념일 알림</Text>
+          <View style={styles.row}>
+            <Text style={[styles.rowLabel, themeStyles.rowLabel]}>알림 사용</Text>
+            <Switch
+              value={notificationsEnabled}
+              onValueChange={handleToggleNotifications}
+              trackColor={{ false: (theme.gray8?.val ?? theme.gray8 ?? '#ccc'), true: accent }}
+              thumbColor={accentFg}
+            />
+          </View>
+          <View style={styles.daysRow}>
+            <Text style={[styles.rowLabel, themeStyles.rowLabel]}>알림 시점</Text>
+            <View style={styles.daysOptions}>
+              {DAYS_OPTIONS.map(({ value, label }) => (
+                <Pressable
+                  key={value}
+                  style={[
+                    themeStyles.chip,
+                    daysBefore === value && themeStyles.chipActive,
+                  ]}
+                  onPress={() => handleSelectDaysBefore(value)}
+                >
+                  <Text
+                    style={[
+                      themeStyles.chipText,
+                      daysBefore === value && themeStyles.chipTextActive,
+                    ]}
+                  >
+                    {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+        </HandDrawnCard>
+      </View>
+
+      <View style={styles.section}>
+        <HandDrawnCard>
+          <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
+            데이터 백업/복원
+          </Text>
+          <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.backupDescription]}>
+            기기 변경 또는 앱 재설치 시 백업 파일로 데이터를 복원할 수 있습니다.
+          </Text>
+          <View style={styles.backupButtons}>
+            <HandDrawnButton
+              variant="primary"
+              onPress={handleExportBackup}
+              disabled={backupRestoreBusy}
+              style={styles.backupButton}
+            >
+              백업하여 공유
+            </HandDrawnButton>
+            <HandDrawnButton
+              variant="secondary"
+              onPress={handleRestoreBackup}
+              disabled={backupRestoreBusy}
+              style={styles.backupButton}
+            >
+              백업 파일에서 복원
+            </HandDrawnButton>
+          </View>
+        </HandDrawnCard>
       </View>
     </View>
   );

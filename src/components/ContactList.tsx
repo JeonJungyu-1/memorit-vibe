@@ -3,7 +3,6 @@ import {
   View,
   FlatList,
   Text,
-  TextInput,
   Pressable,
   ActivityIndicator,
   StyleSheet,
@@ -22,7 +21,9 @@ import {
   saveContacts,
   getSavedContacts,
 } from '../db/Database';
-import { getThemeColor, SPACING, RADIUS, FONT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
+import { HandDrawnButton } from './HandDrawnButton';
+import { HandDrawnInput } from './HandDrawnInput';
 
 type ContactListNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -52,25 +53,18 @@ const ContactList: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation<ContactListNavigationProp>();
   const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
-  const borderColor = getThemeColor(theme, 'borderColor') || '#ddd';
-  const bgHover = getThemeColor(theme, 'backgroundHover') || '#fafafa';
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
-
   const color = getThemeColor(theme, 'color') || '#333';
   const themeStyles = useMemo(
     () => ({
-      searchInput: { borderColor, backgroundColor: bgHover },
+      title: { color, fontFamily: FONT.fontFamilyHeading },
       contactRow: { borderBottomColor: borderLight },
-      phone: { color: colorMuted },
-      contactName: { color },
-      primaryButton: { backgroundColor: accent },
-      primaryButtonText: { color: '#fff' },
-      secondaryButton: { borderColor, backgroundColor: bgHover },
-      secondaryButtonText: { color },
+      phone: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
+      contactName: { color, fontFamily: FONT.fontFamilyBody },
     }),
-    [borderColor, bgHover, borderLight, colorMuted, color, accent],
+    [borderLight, colorMuted, color],
   );
 
   const onPermissionDenied = useCallback(() => {
@@ -186,59 +180,39 @@ const ContactList: React.FC = () => {
 
   return (
     <Container>
-      <Text style={[styles.title, { color }]}>연락처 선택</Text>
+      <Text style={[styles.title, themeStyles.title]}>연락처 선택</Text>
 
       {mode === 'select' ? (
         <View style={styles.selectBar}>
-          <Pressable
-            style={[styles.secondaryButton, themeStyles.secondaryButton]}
-            onPress={selectAll}
-          >
-            <Text style={[styles.secondaryButtonText, themeStyles.secondaryButtonText]}>
-              전체선택
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[styles.secondaryButton, themeStyles.secondaryButton]}
-            onPress={clearSelection}
-          >
-            <Text style={[styles.secondaryButtonText, themeStyles.secondaryButtonText]}>
-              선택해제
-            </Text>
-          </Pressable>
-          <Pressable
-            style={[
-              styles.primaryButton,
-              themeStyles.primaryButton,
-              selectedCount === 0 && styles.buttonDisabled,
-            ]}
+          <HandDrawnButton variant="secondary" onPress={selectAll}>
+            전체선택
+          </HandDrawnButton>
+          <HandDrawnButton variant="secondary" onPress={clearSelection}>
+            선택해제
+          </HandDrawnButton>
+          <HandDrawnButton
+            variant="primary"
             onPress={importSelected}
             disabled={selectedCount === 0}
+            style={selectedCount === 0 ? styles.buttonDisabled : undefined}
           >
-            <Text style={[styles.primaryButtonText, themeStyles.primaryButtonText]}>
-              가져오기 ({selectedCount})
-            </Text>
-          </Pressable>
+            가져오기 ({selectedCount})
+          </HandDrawnButton>
         </View>
       ) : (
         <View style={styles.selectBar}>
-          <Pressable
-            style={[styles.primaryButton, themeStyles.primaryButton]}
-            onPress={() => setMode('select')}
-          >
-            <Text style={[styles.primaryButtonText, themeStyles.primaryButtonText]}>
-              다시 선택
-            </Text>
-          </Pressable>
+          <HandDrawnButton variant="primary" onPress={() => setMode('select')}>
+            다시 선택
+          </HandDrawnButton>
         </View>
       )}
 
-      <TextInput
-        style={[styles.searchInput, themeStyles.searchInput]}
+      <HandDrawnInput
         placeholder="이름 또는 번호로 검색"
         placeholderTextColor={placeholderColor}
         value={searchQuery}
         onChangeText={setSearchQuery}
+        style={styles.searchInputWrap}
       />
 
       <FlatList
@@ -307,38 +281,10 @@ const styles = StyleSheet.create({
     gap: SPACING.itemGap,
     marginBottom: SPACING.rowGap,
   },
-  primaryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    borderRadius: RADIUS.md,
-    minHeight: SPACING.touchTargetMin,
-    justifyContent: 'center',
-  },
-  primaryButtonText: {
-    fontSize: FONT.bodySmall,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: RADIUS.md,
-    borderWidth: 1,
-    minHeight: SPACING.touchTargetMin,
-    justifyContent: 'center',
-  },
-  secondaryButtonText: {
-    fontSize: FONT.bodySmall,
-    fontWeight: '500',
-  },
   buttonDisabled: {
     opacity: 0.5,
   },
-  searchInput: {
-    height: SPACING.touchTargetMin,
-    borderWidth: 1,
-    borderRadius: RADIUS.md,
-    paddingHorizontal: 14,
-    fontSize: FONT.body,
+  searchInputWrap: {
     marginBottom: SPACING.rowGap,
   },
   contactRow: {
@@ -355,6 +301,7 @@ const styles = StyleSheet.create({
   },
   checkMark: {
     fontSize: FONT.bodySmall,
+    fontFamily: FONT.fontFamilyBody,
   },
   phone: {
     fontSize: FONT.bodySmall,
