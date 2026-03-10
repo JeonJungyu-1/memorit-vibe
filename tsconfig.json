@@ -5,7 +5,7 @@
     "skipLibCheck": true,
     "jsx": "react-native",
     "esModuleInterop": true,
-    "lib": ["es2015"]
+    "lib": ["es2015", "es2019"]
   },
   "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["**/node_modules", "**/Pods"]

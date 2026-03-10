@@ -10,9 +10,6 @@ import {
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
-import { useFonts } from 'expo-font';
-import { Kalam_700Bold } from '@expo-google-fonts/kalam';
-import { PatrickHand_400Regular } from '@expo-google-fonts/patrick-hand';
 import type { RootStackParamList } from './src/navigation/types';
 import ContactList from './src/components/ContactList';
 import HomeScreen from './src/screens/HomeScreen';
@@ -59,10 +56,6 @@ const styles = StyleSheet.create({
 
 function AppContent() {
   const theme = useTheme();
-  const [fontsLoaded, fontsError] = useFonts({
-    Kalam_700Bold,
-    PatrickHand_400Regular,
-  });
   const [dbReady, setDbReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState<
     keyof RootStackParamList | null
@@ -94,11 +87,7 @@ function AppContent() {
     init();
   }, []);
 
-  if (fontsError) {
-    console.error('Font loading failed', fontsError);
-  }
-
-  const isReady = fontsLoaded && dbReady && initialRoute !== null;
+  const isReady = dbReady && initialRoute !== null;
   if (!isReady) {
     return (
       <AppShell>
