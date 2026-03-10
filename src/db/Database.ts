@@ -62,19 +62,47 @@ export const createTables = async (db: any) => {
         contactId TEXT,
         type TEXT,
         amount INTEGER,
+        expense_amount INTEGER DEFAULT 0,
         date TEXT,
         memo TEXT,
         FOREIGN KEY (contactId) REFERENCES contacts(contactId)
     );`;
 
   await db.executeSql(eventQuery);
+  await migrateAddExpenseAmount(db);
 };
+
+/**
+ * 기존 DB에 expense_amount 컬럼이 없으면 추가합니다.
+ */
+async function migrateAddExpenseAmount(db: any): Promise<void> {
+  try {
+    const [result] = await db.executeSql('PRAGMA table_info(events);');
+    const rows = result?.rows ?? { length: 0 };
+    let hasExpenseAmount = false;
+    for (let i = 0; i < rows.length; i++) {
+      const col = rows.item(i);
+      if (col?.name === 'expense_amount') {
+        hasExpenseAmount = true;
+        break;
+      }
+    }
+    if (!hasExpenseAmount) {
+      await db.executeSql(
+        'ALTER TABLE events ADD COLUMN expense_amount INTEGER DEFAULT 0;',
+      );
+    }
+  } catch (e) {
+    console.warn('migrateAddExpenseAmount failed', e);
+  }
+}
 
 export type Event = {
   id: number;
   contactId: string;
   type: string;
   amount: number;
+  expenseAmount?: number;
   date: string;
   memo: string;
 };
@@ -84,13 +112,17 @@ export const getEventsByContactId = async (
   contactId: string,
 ): Promise<Event[]> => {
   const [results] = await db.executeSql(
-    'SELECT id, contactId, type, amount, date, memo FROM events WHERE contactId = ? ORDER BY date ASC;',
+    'SELECT id, contactId, type, amount, expense_amount as expenseAmount, date, memo FROM events WHERE contactId = ? ORDER BY date ASC;',
     [contactId],
   );
   const rows: Event[] = [];
   const rowCount = results?.rows?.length ?? 0;
   for (let i = 0; i < rowCount; i++) {
-    rows.push(results.rows.item(i) as Event);
+    const item = results.rows.item(i);
+    rows.push({
+      ...item,
+      expenseAmount: item.expenseAmount ?? 0,
+    } as Event);
   }
   return rows;
 };
@@ -105,23 +137,33 @@ export const saveEvent = async (
     contactId: string;
     type: string;
     amount: number;
+    expenseAmount?: number;
     date: string;
     memo: string;
   },
 ): Promise<number> => {
+  const expenseAmount = event.expenseAmount ?? 0;
   if (event.id != null) {
     await db.executeSql(
-      'UPDATE events SET type = ?, amount = ?, date = ?, memo = ? WHERE id = ?;',
-      [event.type, event.amount, event.date, event.memo ?? '', event.id],
+      'UPDATE events SET type = ?, amount = ?, expense_amount = ?, date = ?, memo = ? WHERE id = ?;',
+      [
+        event.type,
+        event.amount,
+        expenseAmount,
+        event.date,
+        event.memo ?? '',
+        event.id,
+      ],
     );
     return event.id;
   }
   await db.executeSql(
-    'INSERT INTO events (contactId, type, amount, date, memo) VALUES (?, ?, ?, ?, ?);',
+    'INSERT INTO events (contactId, type, amount, expense_amount, date, memo) VALUES (?, ?, ?, ?, ?, ?);',
     [
       event.contactId,
       event.type,
       event.amount,
+      expenseAmount,
       event.date,
       event.memo ?? '',
     ],
@@ -142,7 +184,7 @@ export const getUpcomingEvents = async (
   try {
     const today = new Date().toISOString().slice(0, 10);
     const [results] = await db.executeSql(
-      `SELECT e.id, e.contactId, e.type, e.amount, e.date, e.memo, c.displayName
+      `SELECT e.id, e.contactId, e.type, e.amount, e.expense_amount as expenseAmount, e.date, e.memo, c.displayName
        FROM events e
        LEFT JOIN contacts c ON c.contactId = e.contactId
        WHERE e.date >= ?
@@ -153,7 +195,11 @@ export const getUpcomingEvents = async (
     const rows: (Event & { displayName?: string })[] = [];
     const rowCount = results?.rows?.length ?? 0;
     for (let i = 0; i < rowCount; i++) {
-      rows.push(results.rows.item(i) as Event & { displayName?: string });
+      const item = results.rows.item(i);
+      rows.push({
+        ...item,
+        expenseAmount: item.expenseAmount ?? 0,
+      } as Event & { displayName?: string });
     }
     return rows;
   } catch (e) {
@@ -268,6 +314,7 @@ export type BackupEvent = {
   contactId: string;
   type: string;
   amount: number;
+  expenseAmount?: number;
   date: string;
   memo: string;
 };
@@ -303,7 +350,7 @@ export const exportBackupData = async (db: any): Promise<BackupData> => {
   }
 
   const [eventsResults] = await db.executeSql(
-    'SELECT contactId, type, amount, date, memo FROM events ORDER BY id ASC;',
+    'SELECT contactId, type, amount, expense_amount as expenseAmount, date, memo FROM events ORDER BY id ASC;',
   );
   const events: BackupEvent[] = [];
   const eventCount = eventsResults?.rows?.length ?? 0;
@@ -313,6 +360,7 @@ export const exportBackupData = async (db: any): Promise<BackupData> => {
       contactId: row.contactId,
       type: row.type,
       amount: row.amount ?? 0,
+      expenseAmount: row.expenseAmount ?? 0,
       date: row.date,
       memo: row.memo ?? '',
     });
@@ -346,7 +394,7 @@ export const restoreBackupData = async (
         const insertContact =
           'INSERT INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);';
         const insertEvent =
-          'INSERT INTO events (contactId, type, amount, date, memo) VALUES (?, ?, ?, ?, ?);';
+          'INSERT INTO events (contactId, type, amount, expense_amount, date, memo) VALUES (?, ?, ?, ?, ?, ?);';
 
         tx.executeSql('DELETE FROM events;', [], () => {
           tx.executeSql('DELETE FROM contacts;', [], () => {
@@ -364,6 +412,7 @@ export const restoreBackupData = async (
                         String(e.contactId),
                         String(e.type ?? ''),
                         Number(e.amount) || 0,
+                        Number(e?.expenseAmount) || 0,
                         String(e.date),
                         String(e.memo ?? ''),
                       ],

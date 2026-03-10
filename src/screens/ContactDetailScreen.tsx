@@ -35,6 +35,7 @@ import {
   getEventLabel,
   getEventDisplayText,
 } from '../constants/eventTypes';
+import { formatCurrency } from '../utils/format';
 
 type SavedContact = {
   contactId: string;
@@ -215,6 +216,17 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
             <Text style={[styles.addButtonText, themeStyles.addButtonText]}>기념일 추가</Text>
           </Pressable>
         </View>
+        {(() => {
+          const totalExpense = events.reduce(
+            (sum, e) => sum + (e.expenseAmount ?? 0),
+            0,
+          );
+          return totalExpense > 0 ? (
+            <Text style={[styles.totalExpense, themeStyles.eventAmount]}>
+              총 경조사비: {formatCurrency(totalExpense)}
+            </Text>
+          ) : null;
+        })()}
         <FlatList
           data={events}
           keyExtractor={item => String(item.id)}
@@ -237,6 +249,11 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
                 ) : null}
                 {item.amount > 0 ? (
                   <Text style={[styles.eventAmount, themeStyles.eventAmount]}>{item.amount}주년</Text>
+                ) : null}
+                {(item.expenseAmount ?? 0) > 0 ? (
+                  <Text style={[styles.eventAmount, themeStyles.eventAmount]}>
+                    {formatCurrency(item.expenseAmount ?? 0)}
+                  </Text>
                 ) : null}
               </Pressable>
               <Pressable
@@ -324,6 +341,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       ? String(initialEvent.amount)
       : '',
   );
+  const [expenseAmount, setExpenseAmount] = useState(() =>
+    initialEvent && (initialEvent.expenseAmount ?? 0) > 0
+      ? String(initialEvent.expenseAmount)
+      : '',
+  );
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -385,6 +407,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         contactId,
         type,
         amount: parseInt(amount, 10) || 0,
+        expenseAmount: parseInt(expenseAmount, 10) || 0,
         date: trimmedDate,
         memo: memo.trim(),
       });
@@ -479,6 +502,15 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               style={[modalStyles.input, modalThemeStyles.input]}
               value={amount}
               onChangeText={setAmount}
+              placeholder="0"
+              placeholderTextColor={modalPlaceholder}
+              keyboardType="number-pad"
+            />
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>경조사비 (원)</Text>
+            <TextInput
+              style={[modalStyles.input, modalThemeStyles.input]}
+              value={expenseAmount}
+              onChangeText={setExpenseAmount}
               placeholder="0"
               placeholderTextColor={modalPlaceholder}
               keyboardType="number-pad"
@@ -643,6 +675,10 @@ const styles = StyleSheet.create({
   eventsSectionTitle: {
     fontSize: 18,
     fontWeight: '600',
+  },
+  totalExpense: {
+    fontSize: 14,
+    marginBottom: 8,
   },
   addButton: {
     paddingVertical: 8,
