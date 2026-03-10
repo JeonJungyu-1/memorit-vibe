@@ -22,6 +22,10 @@ import { getDBConnection, createTables, getContactsCount } from './src/db/Databa
 import { useTheme } from 'tamagui';
 import config from './tamagui.config';
 import { ThemeProvider, useThemeMode } from './src/contexts/ThemeContext';
+import {
+  getThemeColor,
+  HAND_DRAWN_LIGHT,
+} from './src/utils/themeColors';
 
 LogBox.ignoreLogs([/SQLite/]);
 
@@ -30,7 +34,8 @@ const Stack = createNativeStackNavigator<RootStackParamList>();
 function AppShell({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
   const { resolvedTheme } = useThemeMode();
-  const backgroundColor = theme.background?.val ?? theme.background ?? '#fff';
+  const backgroundColor =
+    getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
   const isDark = resolvedTheme === 'dark';
 
   return (
@@ -62,9 +67,10 @@ function AppContent() {
   const [initialRoute, setInitialRoute] = useState<
     keyof RootStackParamList | null
   >(null);
-  const accent = theme.blue9?.val ?? theme.blue9 ?? '#0a7ea4';
+  const loadingColor =
+    getThemeColor(theme, 'red9') || HAND_DRAWN_LIGHT.accent;
   const screenBackgroundColor =
-    theme.background?.val ?? theme.background ?? '#fff';
+    getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
 
   useEffect(() => {
     async function init() {
@@ -97,7 +103,7 @@ function AppContent() {
     return (
       <AppShell>
         <View style={styles.loading}>
-          <ActivityIndicator size="large" color={accent} />
+          <ActivityIndicator size="large" color={loadingColor} />
         </View>
       </AppShell>
     );
