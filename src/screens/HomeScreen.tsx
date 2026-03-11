@@ -216,6 +216,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('Statistics');
   };
 
+  const handleOpenHelper = () => {
+    navigation.navigate('Helper');
+  };
+
   const handleRemoveContact = useCallback(
     (contact: SavedContact) => {
       Alert.alert(
@@ -300,6 +304,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <View style={styles.headerRow}>
         <Text style={[styles.header, { color }]}>Memorit</Text>
         <View style={styles.headerButtons}>
+          <HandDrawnButton variant="secondary" onPress={handleOpenHelper}>
+            도우미
+          </HandDrawnButton>
           <HandDrawnButton variant="secondary" onPress={handleOpenStatistics}>
             통계
           </HandDrawnButton>
