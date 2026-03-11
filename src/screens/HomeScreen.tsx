@@ -33,7 +33,7 @@ import {
 } from '../constants/contactGroups';
 import { cancelEventNotification } from '../services/notificationService';
 import { getEventDisplayText } from '../constants/eventTypes';
-import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, WOBBLY_SM } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 import { HandDrawnInput } from '../components/HandDrawnInput';
@@ -548,8 +548,8 @@ const styles = StyleSheet.create({
   groupChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
+    ...WOBBLY_SM,
+    borderWidth: 2,
   },
   groupChipText: {
     fontSize: FONT.bodySmall,
