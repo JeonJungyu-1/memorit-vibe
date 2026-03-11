@@ -610,6 +610,7 @@ const styles = StyleSheet.create({
   screenRoot: {
     flex: 1,
     padding: SPACING.screenPadding,
+    paddingTop: SPACING.screenPadding + 12,
   },
   loadingContainer: {
     flex: 1,
