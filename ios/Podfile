@@ -5,6 +5,9 @@ require Pod::Executable.execute_command('node', ['-p',
     {paths: [process.argv[1]]},
   )', __dir__]).strip
 
+# Expo 모듈(expo-font 등) 네이티브 링크
+require_relative '../node_modules/expo/scripts/autolinking'
+
 # react-native-permissions: enable only the permissions you need
 require_relative '../node_modules/react-native-permissions/scripts/setup'
 setup_permissions(['Contacts'])
@@ -20,6 +23,7 @@ end
 
 target 'memorit' do
   config = use_native_modules!
+  use_expo_modules!
 
   use_react_native!(
     :path => config[:reactNativePath],

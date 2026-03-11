@@ -1,9 +1,18 @@
-pluginManagement { 
+pluginManagement {
     includeBuild("../node_modules/@react-native/gradle-plugin")
+    includeBuild("../node_modules/expo-modules-autolinking/android/expo-gradle-plugin")
 }
 
-plugins { id("com.facebook.react.settings") }
-extensions.configure(com.facebook.react.ReactSettingsExtension){ ex -> ex.autolinkLibrariesFromCommand() }
+plugins {
+    id("com.facebook.react.settings")
+    id("expo-autolinking-settings")
+}
+
+extensions.configure(com.facebook.react.ReactSettingsExtension) { ex -> ex.autolinkLibrariesFromCommand() }
+
+// Expo 모듈(expo-font 등) 네이티브 링크 - ExpoFontLoader 등록
+expoAutolinking.projectRoot = file("..")
+expoAutolinking.useExpoModules()
 
 rootProject.name = 'memorit'
 include ':app'
