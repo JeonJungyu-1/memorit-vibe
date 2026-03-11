@@ -6,6 +6,7 @@ import {
   Pressable,
   ActivityIndicator,
   StyleSheet,
+  type ViewStyle,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -27,7 +28,7 @@ import {
   getContactGroupLabel,
   getContactGroupEmoji,
 } from '../constants/contactGroups';
-import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, WOBBLY_SM, HAND_DRAWN_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from './HandDrawnButton';
 import { HandDrawnInput } from './HandDrawnInput';
 
@@ -58,11 +59,12 @@ function getSearchableText(item: {
 const ContactList: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation<ContactListNavigationProp>();
-  const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
+  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || HAND_DRAWN_LIGHT.accent;
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
   const color = getThemeColor(theme, 'color') || '#333';
+  const borderColor = getThemeColor(theme, 'borderColor') || '#2d2d2d';
   const themeStyles = useMemo(
     () => ({
       title: { color, fontFamily: FONT.fontFamilyHeading },
@@ -71,8 +73,9 @@ const ContactList: React.FC = () => {
       contactName: { color, fontFamily: FONT.fontFamilyBody },
       groupChipBorder: { borderColor: borderLight },
       groupChipText: { color, fontFamily: FONT.fontFamilyBody },
+      checkboxBorder: { borderColor },
     }),
-    [borderLight, colorMuted, color],
+    [borderLight, colorMuted, color, borderColor],
   );
 
   const onPermissionDenied = useCallback(() => {
@@ -325,7 +328,7 @@ const ContactList: React.FC = () => {
             style={[styles.contactRow, themeStyles.contactRow]}
           >
             {mode === 'select' && (
-              <Checkbox>
+              <Checkbox style={themeStyles.checkboxBorder}>
                 <Text style={styles.checkMark}>
                   {selectedIds.has(itemId) ? '✓' : ''}
                 </Text>
@@ -366,18 +369,20 @@ const Container = styled(YStack, {
   backgroundColor: '$background',
 });
 
-const Checkbox = styled(YStack, {
-  width: 28,
-  height: 28,
-  borderWidth: 1,
-  borderColor: '$border',
-  borderRadius: 4,
-  justifyContent: 'center',
-  alignItems: 'center',
-  marginRight: '$2',
-});
+function Checkbox({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
+  return <View style={[styles.checkboxWobbly, style]}>{children}</View>;
+}
 
 const styles = StyleSheet.create({
+  checkboxWobbly: {
+    width: 28,
+    height: 28,
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+    ...WOBBLY_SM,
+  },
   title: {
     fontSize: FONT.title,
     fontWeight: '700',
@@ -404,8 +409,8 @@ const styles = StyleSheet.create({
   groupChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    borderRadius: 16,
-    borderWidth: 1,
+    ...WOBBLY_SM,
+    borderWidth: 2,
   },
   groupChipText: {
     fontSize: FONT.bodySmall,
