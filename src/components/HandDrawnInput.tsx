@@ -65,13 +65,7 @@ export function HandDrawnInput({
 
   const focusRingColor = isFocused ? secondaryAccent : borderColor;
   const focusRingStyle: ViewStyle = isFocused
-    ? {
-        shadowColor: secondaryAccent,
-        shadowOffset: { width: 0, height: 0 },
-        shadowRadius: 3,
-        shadowOpacity: 0.4,
-        elevation: 4,
-      }
+    ? { borderWidth: 2, borderColor: secondaryAccent }
     : {};
 
   return (
