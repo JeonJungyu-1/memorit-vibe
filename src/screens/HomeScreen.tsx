@@ -457,7 +457,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <HandDrawnCard style={styles.calendarDayCard}>
             <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
               {selectedCalendarDate
-                ? `${selectedCalendarDate} 일정`
+                ? '선택한 날짜 일정'
                 : '날짜를 선택하세요'}
             </Text>
             {selectedCalendarDate &&

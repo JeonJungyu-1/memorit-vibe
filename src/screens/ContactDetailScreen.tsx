@@ -621,7 +621,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               inputStyle={modalStyles.inputMultiline}
               style={modalStyles.inputSpacer}
             />
-            <Text style={[modalStyles.label, modalThemeStyles.label]}>N주년 (선택, 숫자만)</Text>
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>주년 수 (선택, 숫자만)</Text>
             <HandDrawnInput
               value={amount}
               onChangeText={setAmount}

@@ -82,7 +82,7 @@ const ContactList: React.FC = () => {
     Toast.show({
       type: 'error',
       text1: '권한 거부',
-      text2: '연락처를 불러오려면 접근 권한을 허용해주세요.',
+      text2: '연락처를 불러오기 위해 접근 권한을 허용해주세요.',
     });
   }, []);
   const onFetchError = useCallback(() => {
@@ -235,10 +235,10 @@ const ContactList: React.FC = () => {
       {mode === 'select' ? (
         <View style={styles.selectBar}>
           <HandDrawnButton variant="secondary" onPress={selectAll}>
-            전체선택
+            전체 선택
           </HandDrawnButton>
           <HandDrawnButton variant="secondary" onPress={clearSelection}>
-            선택해제
+            선택 해제
           </HandDrawnButton>
           <HandDrawnButton
             variant="primary"
