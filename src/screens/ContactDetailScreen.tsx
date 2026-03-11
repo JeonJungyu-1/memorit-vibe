@@ -81,35 +81,36 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
     minute: number;
   } | null>(null);
 
-  const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
-  const color = getThemeColor(theme, 'color') || '#333';
+  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+  const secondaryAccent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || '#2d5da1';
+  const color = getThemeColor(theme, 'color') || '#2d2d2d';
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const rawBg = (theme as { background?: { val?: string } | string }).background;
   const screenBg =
-    (typeof rawBg === 'object' && rawBg?.val) || (typeof rawBg === 'string' ? rawBg : '') || '#fff';
-  const borderLight = getThemeColor(theme, 'gray4') || '#eee';
-  const red = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#c00';
+    (typeof rawBg === 'object' && rawBg?.val) || (typeof rawBg === 'string' ? rawBg : '') || '#fdfbf7';
+  const borderLight = getThemeColor(theme, 'gray4') || '#e5e0d8';
+  const red = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
 
   const themeStyles = useMemo(
     () => ({
-      backButtonText: { color: accent, fontFamily: FONT.fontFamilyBody },
+      backButtonText: { color: secondaryAccent, fontFamily: FONT.fontFamilyBody },
       name: { color, fontFamily: FONT.fontFamilyHeading },
-      phone: { color: accent, fontFamily: FONT.fontFamilyBody },
+      phone: { color: secondaryAccent, fontFamily: FONT.fontFamilyBody },
       phoneHint: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
       phoneEmpty: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
       errorText: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
       emptyEvents: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
       eventRow: { borderBottomColor: borderLight },
-      editEventButtonText: { color: accent, fontFamily: FONT.fontFamilyBody },
+      editEventButtonText: { color: secondaryAccent, fontFamily: FONT.fontFamilyBody },
       deleteEventButtonText: { color: red, fontFamily: FONT.fontFamilyBody },
       eventDate: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
       eventMemo: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
-      eventAmount: { color: accent, fontFamily: FONT.fontFamilyBody },
+      eventAmount: { color: secondaryAccent, fontFamily: FONT.fontFamilyBody },
       eventType: { fontFamily: FONT.fontFamilyBody },
       sectionTitle: { color, fontFamily: FONT.fontFamilyHeading },
-      totalExpense: { color: accent, fontFamily: FONT.fontFamilyBody },
+      totalExpense: { color: secondaryAccent, fontFamily: FONT.fontFamilyBody },
     }),
-    [accent, color, colorMuted, borderLight, red],
+    [accent, secondaryAccent, color, colorMuted, borderLight, red],
   );
 
   const loadData = useCallback(async () => {
@@ -457,11 +458,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
 
   const pickerDate = useMemo(() => parseDateString(date), [date]);
 
-  const modalAccent = getThemeColor(modalTheme, 'blue9') || '#0a7ea4';
-  const modalBg = getThemeColor(modalTheme, 'background') || '#fff';
-  const modalColor = getThemeColor(modalTheme, 'color') || '#333';
-  const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#ddd';
-  const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f9f9f9';
+  const modalAccent = getThemeColor(modalTheme, 'blue9') || getThemeColor(modalTheme, 'blue10') || '#2d5da1';
+  const modalBg = getThemeColor(modalTheme, 'background') || '#fdfbf7';
+  const modalColor = getThemeColor(modalTheme, 'color') || '#2d2d2d';
+  const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#2d2d2d';
+  const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f5f3ef';
 
   const modalThemeStyles = useMemo(
     () => ({
@@ -669,11 +670,11 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [memo, setMemo] = useState(contact.memo ?? '');
   const [saving, setSaving] = useState(false);
 
-  const modalAccent = getThemeColor(modalTheme, 'blue9') || '#0a7ea4';
-  const modalBg = getThemeColor(modalTheme, 'background') || '#fff';
-  const modalColor = getThemeColor(modalTheme, 'color') || '#333';
-  const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#ddd';
-  const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f9f9f9';
+  const modalAccent = getThemeColor(modalTheme, 'blue9') || getThemeColor(modalTheme, 'blue10') || '#2d5da1';
+  const modalBg = getThemeColor(modalTheme, 'background') || '#fdfbf7';
+  const modalColor = getThemeColor(modalTheme, 'color') || '#2d2d2d';
+  const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#2d2d2d';
+  const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f5f3ef';
 
   const modalThemeStyles = useMemo(
     () => ({
