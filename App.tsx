@@ -6,6 +6,7 @@ import {
   LogBox,
   ActivityIndicator,
   View,
+  AppState,
 } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -17,7 +18,13 @@ import ContactDetailScreen from './src/screens/ContactDetailScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import StatisticsScreen from './src/screens/StatisticsScreen';
 import HelperScreen from './src/screens/HelperScreen';
-import { getDBConnection, createTables, getContactsCount } from './src/db/Database';
+import {
+  getDBConnection,
+  createTables,
+  getContactsCount,
+  getRecurringEventsForReschedule,
+} from './src/db/Database';
+import { rescheduleRecurringEventsIfNeeded } from './src/services/notificationService';
 import { useTheme } from 'tamagui';
 import config from './tamagui.config';
 import { ThemeProvider, useThemeMode } from './src/contexts/ThemeContext';
@@ -87,6 +94,23 @@ function AppContent() {
       }
     }
     init();
+  }, []);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextState => {
+      if (nextState === 'active') {
+        (async () => {
+          try {
+            const db = await getDBConnection();
+            const recurringEvents = await getRecurringEventsForReschedule(db);
+            await rescheduleRecurringEventsIfNeeded(recurringEvents);
+          } catch (e) {
+            console.warn('Recurring notification reschedule failed', e);
+          }
+        })();
+      }
+    });
+    return () => subscription.remove();
   }, []);
 
   const isReady = dbReady && initialRoute !== null;

@@ -7,7 +7,9 @@ import {
   Switch,
   ActivityIndicator,
   Alert,
+  Platform,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { useTheme } from 'tamagui';
 import Toast from 'react-native-toast-message';
 import type { SettingsScreenProps } from '../navigation/types';
@@ -16,6 +18,8 @@ import {
   setNotificationsEnabled,
   getNotificationDaysBefore,
   setNotificationDaysBefore,
+  getNotificationTime,
+  setNotificationTime,
 } from '../utils/notificationSettings';
 import {
   exportAndShareBackup,
@@ -83,7 +87,7 @@ function createThemeStyles(t: ThemeColors) {
       borderColor: t.borderColor,
       backgroundColor: t.backgroundHover,
       minHeight: 40,
-      justifyContent: 'center',
+      justifyContent: 'center' as const,
       shadowColor: t.borderColor,
       ...HARD_SHADOW,
       shadowOpacity: 1,
@@ -103,6 +107,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const { themeMode, setThemeMode } = useThemeMode();
   const [notificationsEnabled, setNotificationsEnabledState] = useState(true);
   const [daysBefore, setDaysBeforeState] = useState(0);
+  const [notificationTime, setNotificationTimeState] = useState({ hour: 9, minute: 0 });
+  const [showTimePicker, setShowTimePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [backupRestoreBusy, setBackupRestoreBusy] = useState(false);
 
@@ -122,12 +128,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [enabled, days] = await Promise.all([
+      const [enabled, days, time] = await Promise.all([
         getNotificationsEnabled(),
         getNotificationDaysBefore(),
+        getNotificationTime(),
       ]);
       setNotificationsEnabledState(enabled);
       setDaysBeforeState(days);
+      setNotificationTimeState(time);
     } catch (e) {
       console.error('Failed to load notification settings', e);
     } finally {
@@ -153,6 +161,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setDaysBeforeState(value);
     await setNotificationDaysBefore(value);
   };
+
+  const notificationTimeDate = useMemo(
+    () =>
+      new Date(2000, 0, 1, notificationTime.hour, notificationTime.minute, 0, 0),
+    [notificationTime.hour, notificationTime.minute],
+  );
+
+  const handleTimeChange = useCallback(
+    (_event: { type: string }, selectedDate?: Date) => {
+      if (Platform.OS === 'android') setShowTimePicker(false);
+      if (
+        Platform.OS === 'android' &&
+        (_event.type === 'dismissed' || _event.type === 'cancel')
+      ) {
+        return;
+      }
+      if (selectedDate) {
+        const hour = selectedDate.getHours();
+        const minute = selectedDate.getMinutes();
+        setNotificationTimeState({ hour, minute });
+        setNotificationTime(hour, minute);
+      }
+    },
+    [],
+  );
+
+  const timeLabel = `${String(notificationTime.hour).padStart(2, '0')}:${String(notificationTime.minute).padStart(2, '0')}`;
 
   const handleExportBackup = useCallback(async () => {
     if (backupRestoreBusy) return;
@@ -305,6 +340,26 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               ))}
             </View>
           </View>
+          <View style={styles.row}>
+            <Text style={[styles.rowLabel, themeStyles.rowLabel]}>알림 시간</Text>
+            <Pressable
+              style={[themeStyles.chip, styles.timeChip]}
+              onPress={() => setShowTimePicker(true)}
+            >
+              <Text style={[themeStyles.chipText, themeStyles.chipText]}>
+                {timeLabel}
+              </Text>
+            </Pressable>
+          </View>
+          {showTimePicker && (
+            <DateTimePicker
+              value={notificationTimeDate}
+              mode="time"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={handleTimeChange}
+              onTouchCancel={() => setShowTimePicker(false)}
+            />
+          )}
         </HandDrawnCard>
       </View>
 
@@ -411,6 +466,9 @@ const styles = StyleSheet.create({
   },
   buttonDisabled: {
     opacity: 0.6,
+  },
+  timeChip: {
+    minWidth: 80,
   },
 });
 

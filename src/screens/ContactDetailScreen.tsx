@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
   Platform,
+  Switch,
 } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import Toast from 'react-native-toast-message';
@@ -35,6 +36,11 @@ import {
   getEventDisplayText,
 } from '../constants/eventTypes';
 import { formatCurrency } from '../utils/format';
+import {
+  getNotificationDaysBefore,
+  getNotificationTime,
+  computeTriggerDate,
+} from '../utils/notificationSettings';
 import {
   getThemeColor,
   SPACING,
@@ -65,6 +71,11 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   const [loading, setLoading] = useState(true);
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [notificationDisplay, setNotificationDisplay] = useState<{
+    daysBefore: number;
+    hour: number;
+    minute: number;
+  } | null>(null);
 
   const accent = getThemeColor(theme, 'blue9') || '#0a7ea4';
   const color = getThemeColor(theme, 'color') || '#333';
@@ -106,6 +117,15 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
       setContact(found);
       const eventList = await getEventsByContactId(db, contactId);
       setEvents(eventList);
+      const [daysBefore, time] = await Promise.all([
+        getNotificationDaysBefore(),
+        getNotificationTime(),
+      ]);
+      setNotificationDisplay({
+        daysBefore,
+        hour: time.hour,
+        minute: time.minute,
+      });
     } catch (e) {
       console.error('Failed to load contact detail', e);
       setContact(null);
@@ -242,7 +262,30 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
           ListEmptyComponent={
             <Text style={[styles.emptyEvents, themeStyles.emptyEvents]}>등록된 기념일이 없습니다.</Text>
           }
-          renderItem={({ item }) => (
+          renderItem={({ item }) => {
+            const triggerInfo =
+              notificationDisplay &&
+              (() => {
+                const trigger = computeTriggerDate(
+                  item.date,
+                  notificationDisplay.daysBefore,
+                  notificationDisplay.hour,
+                  notificationDisplay.minute,
+                );
+                const now = Date.now();
+                const isPast = trigger.getTime() <= now;
+                const m = trigger.getMonth() + 1;
+                const d = trigger.getDate();
+                const h = trigger.getHours();
+                const min = trigger.getMinutes();
+                return {
+                  label: isPast
+                    ? '알림 보냄'
+                    : `알림 예정 ${m}/${d} ${String(h).padStart(2, '0')}:${String(min).padStart(2, '0')}`,
+                  isPast,
+                };
+              })();
+            return (
             <View style={[styles.eventRow, themeStyles.eventRow]}>
               <Pressable
                 style={styles.eventRowContent}
@@ -252,6 +295,11 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
                   {getEventDisplayText(item.type)}
                 </Text>
                 <Text style={[styles.eventDate, themeStyles.eventDate]}>{item.date}</Text>
+                {triggerInfo ? (
+                  <Text style={[styles.eventMemo, themeStyles.eventMemo]}>
+                    {triggerInfo.label}
+                  </Text>
+                ) : null}
                 {item.memo ? (
                   <Text style={[styles.eventMemo, themeStyles.eventMemo]}>{item.memo}</Text>
                 ) : null}
@@ -277,7 +325,8 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
                 <Text style={[styles.deleteEventButtonText, themeStyles.deleteEventButtonText]}>삭제</Text>
               </Pressable>
             </View>
-          )}
+            );
+          }}
         />
       </View>
 
@@ -354,6 +403,11 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       ? String(initialEvent.expenseAmount)
       : '',
   );
+  const [recurring, setRecurring] = useState(() => {
+    if (initialEvent?.recurring !== undefined) return initialEvent.recurring;
+    const t = initialEvent?.type ?? type;
+    return t === 'birthday' || t === 'anniversary';
+  });
   const [saving, setSaving] = useState(false);
   const [showDatePicker, setShowDatePicker] = useState(false);
 
@@ -425,6 +479,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
         expenseAmount: parseInt(expenseAmount, 10) || 0,
         date: trimmedDate,
         memo: memo.trim(),
+        recurring,
       });
       if (initialEvent != null) {
         await cancelEventNotification(initialEvent.id);
@@ -432,7 +487,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
       const typeLabel = getEventLabel(type);
       const title = `${displayName} ${typeLabel}`;
       const body = trimmedDate + (memo.trim() ? ` · ${memo.trim()}` : '');
-      await scheduleEventNotification(eventId, trimmedDate, title, body);
+      await scheduleEventNotification(eventId, trimmedDate, title, body, recurring);
       Toast.show({
         type: 'success',
         text1: isEditMode ? '수정 완료' : '저장 완료',
@@ -503,6 +558,15 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
                 onChange={handleDateChange}
               />
             )}
+            <View style={modalStyles.recurringRow}>
+              <Text style={[modalStyles.label, modalThemeStyles.label]}>매년 알림</Text>
+              <Switch
+                value={recurring}
+                onValueChange={setRecurring}
+                trackColor={{ false: modalBorder, true: modalAccent }}
+                thumbColor="#fff"
+              />
+            </View>
             <Text style={[modalStyles.label, modalThemeStyles.label]}>메모 (선택)</Text>
             <HandDrawnInput
               value={memo}
@@ -577,6 +641,12 @@ const modalStyles = StyleSheet.create({
   dateButton: {
     paddingHorizontal: 12,
     paddingVertical: 12,
+    marginBottom: SPACING.rowGap,
+  },
+  recurringRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: SPACING.rowGap,
   },
   dateButtonText: {

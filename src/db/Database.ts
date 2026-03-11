@@ -70,6 +70,7 @@ export const createTables = async (db: any) => {
 
   await db.executeSql(eventQuery);
   await migrateAddExpenseAmount(db);
+  await migrateAddRecurring(db);
 };
 
 /**
@@ -97,6 +98,31 @@ async function migrateAddExpenseAmount(db: any): Promise<void> {
   }
 }
 
+/**
+ * 기존 DB에 recurring 컬럼이 없으면 추가합니다. (1 = 매년 알림, 0 = 1회만)
+ */
+async function migrateAddRecurring(db: any): Promise<void> {
+  try {
+    const [result] = await db.executeSql('PRAGMA table_info(events);');
+    const rows = result?.rows ?? { length: 0 };
+    let hasRecurring = false;
+    for (let i = 0; i < rows.length; i++) {
+      const col = rows.item(i);
+      if (col?.name === 'recurring') {
+        hasRecurring = true;
+        break;
+      }
+    }
+    if (!hasRecurring) {
+      await db.executeSql(
+        'ALTER TABLE events ADD COLUMN recurring INTEGER DEFAULT 1;',
+      );
+    }
+  } catch (e) {
+    console.warn('migrateAddRecurring failed', e);
+  }
+}
+
 export type Event = {
   id: number;
   contactId: string;
@@ -105,6 +131,8 @@ export type Event = {
   expenseAmount?: number;
   date: string;
   memo: string;
+  /** 매년 같은 날 알림 여부 (기본 true) */
+  recurring?: boolean;
 };
 
 export const getEventsByContactId = async (
@@ -112,7 +140,7 @@ export const getEventsByContactId = async (
   contactId: string,
 ): Promise<Event[]> => {
   const [results] = await db.executeSql(
-    'SELECT id, contactId, type, amount, expense_amount as expenseAmount, date, memo FROM events WHERE contactId = ? ORDER BY date ASC;',
+    'SELECT id, contactId, type, amount, expense_amount as expenseAmount, date, memo, COALESCE(recurring, 1) as recurring FROM events WHERE contactId = ? ORDER BY date ASC;',
     [contactId],
   );
   const rows: Event[] = [];
@@ -122,6 +150,7 @@ export const getEventsByContactId = async (
     rows.push({
       ...item,
       expenseAmount: item.expenseAmount ?? 0,
+      recurring: item.recurring !== 0,
     } as Event);
   }
   return rows;
@@ -140,25 +169,28 @@ export const saveEvent = async (
     expenseAmount?: number;
     date: string;
     memo: string;
+    recurring?: boolean;
   },
 ): Promise<number> => {
   const expenseAmount = event.expenseAmount ?? 0;
+  const recurring = event.recurring !== false ? 1 : 0;
   if (event.id != null) {
     await db.executeSql(
-      'UPDATE events SET type = ?, amount = ?, expense_amount = ?, date = ?, memo = ? WHERE id = ?;',
+      'UPDATE events SET type = ?, amount = ?, expense_amount = ?, date = ?, memo = ?, recurring = ? WHERE id = ?;',
       [
         event.type,
         event.amount,
         expenseAmount,
         event.date,
         event.memo ?? '',
+        recurring,
         event.id,
       ],
     );
     return event.id;
   }
   await db.executeSql(
-    'INSERT INTO events (contactId, type, amount, expense_amount, date, memo) VALUES (?, ?, ?, ?, ?, ?);',
+    'INSERT INTO events (contactId, type, amount, expense_amount, date, memo, recurring) VALUES (?, ?, ?, ?, ?, ?, ?);',
     [
       event.contactId,
       event.type,
@@ -166,6 +198,7 @@ export const saveEvent = async (
       expenseAmount,
       event.date,
       event.memo ?? '',
+      recurring,
     ],
   );
   const [result] = await db.executeSql('SELECT last_insert_rowid() as id');
@@ -184,7 +217,7 @@ export const getUpcomingEvents = async (
   try {
     const today = new Date().toISOString().slice(0, 10);
     const [results] = await db.executeSql(
-      `SELECT e.id, e.contactId, e.type, e.amount, e.expense_amount as expenseAmount, e.date, e.memo, c.displayName
+      `SELECT e.id, e.contactId, e.type, e.amount, e.expense_amount as expenseAmount, e.date, e.memo, COALESCE(e.recurring, 1) as recurring, c.displayName
        FROM events e
        LEFT JOIN contacts c ON c.contactId = e.contactId
        WHERE e.date >= ?
@@ -199,6 +232,7 @@ export const getUpcomingEvents = async (
       rows.push({
         ...item,
         expenseAmount: item.expenseAmount ?? 0,
+        recurring: item.recurring !== 0,
       } as Event & { displayName?: string });
     }
     return rows;
@@ -211,6 +245,36 @@ export const getUpcomingEvents = async (
 /** 캘린더용: 특정 기간(시작·끝 날짜) 내 이벤트 조회 (displayName 포함) */
 export type EventWithDisplayName = Event & { displayName?: string };
 
+/** 반복 알림 재스케줄용: recurring=1인 모든 이벤트 (displayName 포함) */
+export type RecurringEventForReschedule = Event & { displayName?: string };
+
+export const getRecurringEventsForReschedule = async (
+  db: any,
+): Promise<RecurringEventForReschedule[]> => {
+  try {
+    const [results] = await db.executeSql(
+      `SELECT e.id, e.contactId, e.type, e.amount, e.expense_amount as expenseAmount, e.date, e.memo, COALESCE(e.recurring, 1) as recurring, c.displayName
+       FROM events e
+       LEFT JOIN contacts c ON c.contactId = e.contactId
+       WHERE COALESCE(e.recurring, 1) = 1;`,
+    );
+    const rows: RecurringEventForReschedule[] = [];
+    const rowCount = results?.rows?.length ?? 0;
+    for (let i = 0; i < rowCount; i++) {
+      const item = results.rows.item(i);
+      rows.push({
+        ...item,
+        expenseAmount: item.expenseAmount ?? 0,
+        recurring: true,
+      } as RecurringEventForReschedule);
+    }
+    return rows;
+  } catch (e) {
+    console.warn('getRecurringEventsForReschedule failed', e);
+    return [];
+  }
+};
+
 export const getEventsByDateRange = async (
   db: any,
   startDate: string,
@@ -218,7 +282,7 @@ export const getEventsByDateRange = async (
 ): Promise<EventWithDisplayName[]> => {
   try {
     const [results] = await db.executeSql(
-      `SELECT e.id, e.contactId, e.type, e.amount, e.expense_amount as expenseAmount, e.date, e.memo, c.displayName
+      `SELECT e.id, e.contactId, e.type, e.amount, e.expense_amount as expenseAmount, e.date, e.memo, COALESCE(e.recurring, 1) as recurring, c.displayName
        FROM events e
        LEFT JOIN contacts c ON c.contactId = e.contactId
        WHERE e.date >= ? AND e.date <= ?
@@ -232,6 +296,7 @@ export const getEventsByDateRange = async (
       rows.push({
         ...item,
         expenseAmount: item.expenseAmount ?? 0,
+        recurring: item.recurring !== 0,
       } as EventWithDisplayName);
     }
     return rows;
@@ -451,6 +516,7 @@ export type BackupEvent = {
   expenseAmount?: number;
   date: string;
   memo: string;
+  recurring?: boolean;
 };
 
 /** 백업 파일 포맷 */
@@ -484,7 +550,7 @@ export const exportBackupData = async (db: any): Promise<BackupData> => {
   }
 
   const [eventsResults] = await db.executeSql(
-    'SELECT contactId, type, amount, expense_amount as expenseAmount, date, memo FROM events ORDER BY id ASC;',
+    'SELECT contactId, type, amount, expense_amount as expenseAmount, date, memo, COALESCE(recurring, 1) as recurring FROM events ORDER BY id ASC;',
   );
   const events: BackupEvent[] = [];
   const eventCount = eventsResults?.rows?.length ?? 0;
@@ -497,6 +563,7 @@ export const exportBackupData = async (db: any): Promise<BackupData> => {
       expenseAmount: row.expenseAmount ?? 0,
       date: row.date,
       memo: row.memo ?? '',
+      recurring: row.recurring !== 0,
     });
   }
 
@@ -528,7 +595,7 @@ export const restoreBackupData = async (
         const insertContact =
           'INSERT INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);';
         const insertEvent =
-          'INSERT INTO events (contactId, type, amount, expense_amount, date, memo) VALUES (?, ?, ?, ?, ?, ?);';
+          'INSERT INTO events (contactId, type, amount, expense_amount, date, memo, recurring) VALUES (?, ?, ?, ?, ?, ?, ?);';
 
         tx.executeSql('DELETE FROM events;', [], () => {
           tx.executeSql('DELETE FROM contacts;', [], () => {
@@ -549,6 +616,7 @@ export const restoreBackupData = async (
                         Number(e?.expenseAmount) || 0,
                         String(e.date),
                         String(e.memo ?? ''),
+                        e?.recurring !== false ? 1 : 0,
                       ],
                       () => runNextEvent(),
                       (_tx: any, err: any) => {
