@@ -7,6 +7,7 @@ import {
   HARD_SHADOW,
   SPACING,
   FONT,
+  BUTTON_BORDER_WIDTH,
 } from '../utils/themeColors';
 
 export type HandDrawnButtonVariant = 'primary' | 'secondary';
@@ -49,7 +50,7 @@ export function HandDrawnButton({
       style={({ pressed }) => {
         const base: ViewStyle = {
           ...WOBBLY_MD,
-          borderWidth: 2,
+          borderWidth: BUTTON_BORDER_WIDTH,
           minHeight: SPACING.touchTargetMin,
           justifyContent: 'center',
           alignItems: 'center',
@@ -60,14 +61,17 @@ export function HandDrawnButton({
           return [
             base,
             {
-              backgroundColor: isPrimary ? accent : cardBg,
+              backgroundColor: isPrimary ? accent : secondaryAccent,
               borderColor: isPrimary ? accent : secondaryAccent,
               shadowColor: 'transparent',
               shadowOffset: { width: 0, height: 0 },
               shadowRadius: 0,
               shadowOpacity: 0,
               elevation: 0,
-              transform: [{ translateX: pressed && !disabled ? 2 : 0 }, { translateY: pressed && !disabled ? 2 : 0 }],
+              transform: [
+                { translateX: pressed && !disabled ? 4 : 0 },
+                { translateY: pressed && !disabled ? 4 : 0 },
+              ],
             },
             style,
           ];
@@ -87,13 +91,14 @@ export function HandDrawnButton({
     >
       {({ pressed }) => {
         const isPressedOrDisabled = pressed || disabled;
-        const textColor = isPrimary
-          ? isPressedOrDisabled
+        const textColor =
+          isPrimary && isPressedOrDisabled
             ? '#fff'
-            : foreground
-          : isPressedOrDisabled
-            ? secondaryAccent
-            : secondaryAccent;
+            : !isPrimary && isPressedOrDisabled
+              ? '#fff'
+              : isPrimary
+                ? foreground
+                : secondaryAccent;
         return (
           <Text
             style={[
