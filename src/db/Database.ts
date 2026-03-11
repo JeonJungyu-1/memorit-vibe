@@ -208,6 +208,39 @@ export const getUpcomingEvents = async (
   }
 };
 
+/** 캘린더용: 특정 기간(시작·끝 날짜) 내 이벤트 조회 (displayName 포함) */
+export type EventWithDisplayName = Event & { displayName?: string };
+
+export const getEventsByDateRange = async (
+  db: any,
+  startDate: string,
+  endDate: string,
+): Promise<EventWithDisplayName[]> => {
+  try {
+    const [results] = await db.executeSql(
+      `SELECT e.id, e.contactId, e.type, e.amount, e.expense_amount as expenseAmount, e.date, e.memo, c.displayName
+       FROM events e
+       LEFT JOIN contacts c ON c.contactId = e.contactId
+       WHERE e.date >= ? AND e.date <= ?
+       ORDER BY e.date ASC;`,
+      [startDate, endDate],
+    );
+    const rows: EventWithDisplayName[] = [];
+    const rowCount = results?.rows?.length ?? 0;
+    for (let i = 0; i < rowCount; i++) {
+      const item = results.rows.item(i);
+      rows.push({
+        ...item,
+        expenseAmount: item.expenseAmount ?? 0,
+      } as EventWithDisplayName);
+    }
+    return rows;
+  } catch (e) {
+    console.warn('getEventsByDateRange failed', e);
+    return [];
+  }
+};
+
 /** 연도·월별 지출 요약 (expense_amount 기준, 과거 데이터) */
 export type YearMonthSummary = {
   year: string;

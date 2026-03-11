@@ -7,10 +7,13 @@ import {
   ActivityIndicator,
   Pressable,
   Alert,
+  ScrollView,
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { useTheme } from 'tamagui';
 import { YStack, styled } from 'tamagui';
+import { Calendar } from 'react-native-calendars';
+import { LocaleConfig } from 'react-native-calendars';
 import type { HomeScreenProps } from '../navigation/types';
 import {
   getDBConnection,
@@ -18,14 +21,25 @@ import {
   getSavedContacts,
   getEventsByContactId,
   getUpcomingEvents,
+  getEventsByDateRange,
   removeContact,
 } from '../db/Database';
+import type { EventWithDisplayName } from '../db/Database';
 import { cancelEventNotification } from '../services/notificationService';
 import { getEventDisplayText } from '../constants/eventTypes';
 import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 import { HandDrawnInput } from '../components/HandDrawnInput';
+
+LocaleConfig.locales.ko = {
+  monthNames: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+  monthNamesShort: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
+  dayNames: ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'],
+  dayNamesShort: ['일', '월', '화', '수', '목', '금', '토'],
+  today: '오늘',
+};
+LocaleConfig.defaultLocale = 'ko';
 
 const UPCOMING_EVENTS_LIMIT = 10;
 
@@ -56,6 +70,8 @@ function matchContact(contact: SavedContact, normalizedQuery: string): boolean {
   return name.includes(normalizedQuery) || phone.includes(normalizedQuery);
 }
 
+type ViewMode = 'list' | 'calendar';
+
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const theme = useTheme();
   const [contacts, setContacts] = useState<SavedContact[]>([]);
@@ -64,6 +80,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   );
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [calendarCurrent, setCalendarCurrent] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
+  });
+  const [monthEvents, setMonthEvents] = useState<EventWithDisplayName[]>([]);
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
 
   const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
   const color = getThemeColor(theme, 'color') || '#2d2d2d';
@@ -108,6 +131,22 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   }, []);
 
+  /** 캘린더 뷰: 해당 월 이벤트 조회 (YYYY-MM-01 형식 current 사용) */
+  const loadMonthEvents = useCallback(async (current: string) => {
+    const [y, m] = current.split('-').map(Number);
+    const lastDay = new Date(y, m, 0).getDate();
+    const startDate = `${y}-${String(m).padStart(2, '0')}-01`;
+    const endDate = `${y}-${String(m).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
+    try {
+      const db = await getDBConnection();
+      const events = await getEventsByDateRange(db, startDate, endDate);
+      setMonthEvents(events);
+    } catch (e) {
+      console.error('Failed to load month events', e);
+      setMonthEvents([]);
+    }
+  }, []);
+
   useEffect(() => {
     loadContacts();
   }, [loadContacts]);
@@ -116,6 +155,54 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const unsubscribe = navigation.addListener('focus', loadContacts);
     return unsubscribe;
   }, [navigation, loadContacts]);
+
+  useEffect(() => {
+    if (viewMode === 'calendar') {
+      loadMonthEvents(calendarCurrent);
+    }
+  }, [viewMode, calendarCurrent, loadMonthEvents]);
+
+  const markedDates = useMemo(() => {
+    const marked: Record<string, { marked?: boolean; selected?: boolean; selectedColor?: string; selectedTextColor?: string }> = {};
+    const accentColor = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+    monthEvents.forEach((e) => {
+      if (!e.date) return;
+      if (!marked[e.date]) marked[e.date] = { marked: true };
+      if (selectedCalendarDate === e.date) {
+        marked[e.date] = { ...marked[e.date], selected: true, selectedColor: accentColor, selectedTextColor: '#fff' };
+      }
+    });
+    if (selectedCalendarDate && !marked[selectedCalendarDate]) {
+      marked[selectedCalendarDate] = { selected: true, selectedColor: accentColor, selectedTextColor: '#fff' };
+    }
+    return marked;
+  }, [monthEvents, selectedCalendarDate, theme]);
+
+  const selectedDayEvents = useMemo(
+    () => (selectedCalendarDate ? monthEvents.filter((e) => e.date === selectedCalendarDate) : []),
+    [monthEvents, selectedCalendarDate],
+  );
+
+  const calendarTheme = useMemo(
+    () => ({
+      backgroundColor: 'transparent',
+      calendarBackground: 'transparent',
+      textSectionTitleColor: colorMuted,
+      selectedDayBackgroundColor: accent,
+      selectedDayTextColor: '#fff',
+      todayTextColor: accent,
+      dayTextColor: color,
+      textDisabledColor: borderLighter,
+      dotColor: accent,
+      selectedDotColor: '#fff',
+      monthTextColor: color,
+      arrowColor: color,
+      textMonthFontFamily: FONT.fontFamilyHeading,
+      textDayFontFamily: FONT.fontFamilyBody,
+      textDayHeaderFontFamily: FONT.fontFamilyBody,
+    }),
+    [accent, color, colorMuted, borderLighter],
+  );
 
   const handleReselectContacts = () => {
     navigation.navigate('ContactSelect');
@@ -229,14 +316,33 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </HandDrawnButton>
       </View>
 
-      <HandDrawnInput
-        placeholder="이름 또는 번호로 검색"
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        style={styles.searchInput}
-      />
+      <View style={styles.viewToggleRow}>
+        <HandDrawnButton
+          variant={viewMode === 'list' ? 'primary' : 'secondary'}
+          onPress={() => setViewMode('list')}
+          style={styles.viewToggleButton}
+        >
+          목록
+        </HandDrawnButton>
+        <HandDrawnButton
+          variant={viewMode === 'calendar' ? 'primary' : 'secondary'}
+          onPress={() => setViewMode('calendar')}
+          style={styles.viewToggleButton}
+        >
+          캘린더
+        </HandDrawnButton>
+      </View>
 
-      <FlatList
+      {viewMode === 'list' ? (
+        <>
+          <HandDrawnInput
+            placeholder="이름 또는 번호로 검색"
+            value={searchQuery}
+            onChangeText={setSearchQuery}
+            style={styles.searchInput}
+          />
+
+          <FlatList
         data={filteredContacts}
         keyExtractor={item => item.contactId}
         ListHeaderComponent={renderListHeader}
@@ -257,7 +363,64 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           </Pressable>
         )}
         style={styles.list}
-      />
+          />
+        </>
+      ) : (
+        <ScrollView style={styles.calendarScroll} showsVerticalScrollIndicator={false}>
+          <HandDrawnCard style={styles.calendarCard}>
+            <Calendar
+              current={calendarCurrent}
+              onDayPress={(day) => setSelectedCalendarDate(day.dateString)}
+              onMonthChange={(month) => setCalendarCurrent(`${month.year}-${String(month.month).padStart(2, '0')}-01`)}
+              markedDates={markedDates}
+              markingType="dot"
+              theme={calendarTheme}
+              enableSwipeMonths
+              hideExtraDays={false}
+            />
+          </HandDrawnCard>
+          <HandDrawnCard style={styles.calendarDayCard}>
+            <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
+              {selectedCalendarDate
+                ? `${selectedCalendarDate} 일정`
+                : '날짜를 선택하세요'}
+            </Text>
+            {selectedCalendarDate &&
+              (selectedDayEvents.length > 0 ? (
+                selectedDayEvents.map((item) => (
+                  <Pressable
+                    key={`${item.id}-${item.contactId}`}
+                    style={[styles.upcomingRow, themeStyles.upcomingRow]}
+                    onPress={() =>
+                      navigation.navigate('ContactDetail', {
+                        contactId: item.contactId,
+                      })
+                    }
+                  >
+                    <Text style={[styles.upcomingDate, themeStyles.upcomingDate]}>
+                      {getEventDisplayText(item.type)}
+                    </Text>
+                    <Text style={[styles.upcomingLabel, themeStyles.upcomingLabel]}>
+                      {item.displayName ?? '이름 없음'}
+                    </Text>
+                    {item.memo ? (
+                      <Text
+                        style={[styles.upcomingMemo, themeStyles.upcomingMemo]}
+                        numberOfLines={1}
+                      >
+                        {item.memo}
+                      </Text>
+                    ) : null}
+                  </Pressable>
+                ))
+              ) : (
+                <Text style={[styles.summary, themeStyles.summary]}>
+                  해당 날짜에 일정이 없습니다.
+                </Text>
+              ))}
+          </HandDrawnCard>
+        </ScrollView>
+      )}
     </Container>
   );
 };
@@ -290,8 +453,25 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-start',
     marginBottom: SPACING.rowGap,
   },
+  viewToggleRow: {
+    flexDirection: 'row',
+    gap: SPACING.itemGap,
+    marginBottom: SPACING.rowGap,
+  },
+  viewToggleButton: {
+    minWidth: 80,
+  },
   searchInput: {
     marginBottom: SPACING.rowGap,
+  },
+  calendarScroll: {
+    flex: 1,
+  },
+  calendarCard: {
+    marginBottom: SPACING.rowGap,
+  },
+  calendarDayCard: {
+    marginBottom: SPACING.sectionGap,
   },
   upcomingCardWrap: {
     marginBottom: SPACING.rowGap,
