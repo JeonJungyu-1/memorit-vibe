@@ -23,9 +23,17 @@ import {
 } from '../utils/notificationSettings';
 import {
   exportAndShareBackup,
+  exportAndShareCsv,
   pickAndRestoreBackup,
   isDocumentPickerCancel,
 } from '../utils/backupRestore';
+import {
+  getAutoBackupEnabled,
+  setAutoBackupEnabled,
+  getAutoBackupInterval,
+  setAutoBackupInterval,
+  type AutoBackupInterval,
+} from '../utils/autoBackupSettings';
 import { useThemeMode } from '../contexts/ThemeContext';
 import type { ThemeMode } from '../utils/themeSettings';
 import { SPACING, FONT, WOBBLY_SM, HARD_SHADOW } from '../utils/themeColors';
@@ -111,6 +119,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [showTimePicker, setShowTimePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [backupRestoreBusy, setBackupRestoreBusy] = useState(false);
+  const [autoBackupEnabled, setAutoBackupEnabledState] = useState(false);
+  const [autoBackupInterval, setAutoBackupIntervalState] = useState<AutoBackupInterval>('weekly');
 
   const themeStyles = useMemo(
     () =>
@@ -128,16 +138,20 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [enabled, days, time] = await Promise.all([
+      const [enabled, days, time, autoBackupOn, autoBackupInt] = await Promise.all([
         getNotificationsEnabled(),
         getNotificationDaysBefore(),
         getNotificationTime(),
+        getAutoBackupEnabled(),
+        getAutoBackupInterval(),
       ]);
       setNotificationsEnabledState(enabled);
       setDaysBeforeState(days);
       setNotificationTimeState(time);
+      setAutoBackupEnabledState(autoBackupOn);
+      setAutoBackupIntervalState(autoBackupInt);
     } catch (e) {
-      console.error('Failed to load notification settings', e);
+      console.error('Failed to load settings', e);
     } finally {
       setLoading(false);
     }
@@ -209,6 +223,42 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
         type: 'error',
         text1: '백업 실패',
         text2: err?.message ?? '백업 파일을 만들 수 없습니다.',
+      });
+    } finally {
+      setBackupRestoreBusy(false);
+    }
+  }, [backupRestoreBusy]);
+
+  const handleToggleAutoBackup = async (value: boolean) => {
+    setAutoBackupEnabledState(value);
+    await setAutoBackupEnabled(value);
+  };
+
+  const handleSelectAutoBackupInterval = async (value: AutoBackupInterval) => {
+    setAutoBackupIntervalState(value);
+    await setAutoBackupInterval(value);
+  };
+
+  const handleExportCsv = useCallback(async () => {
+    if (backupRestoreBusy) return;
+    setBackupRestoreBusy(true);
+    try {
+      await exportAndShareCsv();
+      Toast.show({
+        type: 'success',
+        text1: 'CSV 내보내기 완료',
+        text2: '공유할 앱을 선택해 저장하세요.',
+      });
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      if (err?.message?.includes('User did not share') || err?.message === 'User did not share') {
+        return;
+      }
+      console.error('CSV export failed', e);
+      Toast.show({
+        type: 'error',
+        text1: 'CSV 내보내기 실패',
+        text2: err?.message ?? 'CSV 파일을 만들 수 없습니다.',
       });
     } finally {
       setBackupRestoreBusy(false);
@@ -388,6 +438,55 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       <View style={styles.section}>
         <HandDrawnCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
+            자동 백업
+          </Text>
+          <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.backupDescription]}>
+            앱을 열 때마다 주기에 따라 기기 내에 백업 파일을 자동으로 저장합니다.
+          </Text>
+          <View style={styles.row}>
+            <Text style={[styles.rowLabel, themeStyles.rowLabel]}>자동 백업 사용</Text>
+            <Switch
+              value={autoBackupEnabled}
+              onValueChange={handleToggleAutoBackup}
+              trackColor={{ false: (theme.gray8?.val ?? theme.gray8 ?? '#ccc'), true: accent }}
+              thumbColor={accentFg}
+            />
+          </View>
+          {autoBackupEnabled && (
+            <View style={styles.daysRow}>
+              <Text style={[styles.rowLabel, themeStyles.rowLabel]}>백업 주기</Text>
+              <View style={styles.daysOptions}>
+                {[
+                  { value: 'daily' as const, label: '매일' },
+                  { value: 'weekly' as const, label: '매주' },
+                ].map(({ value, label }) => (
+                  <Pressable
+                    key={value}
+                    style={[
+                      themeStyles.chip,
+                      autoBackupInterval === value && themeStyles.chipActive,
+                    ]}
+                    onPress={() => handleSelectAutoBackupInterval(value)}
+                  >
+                    <Text
+                      style={[
+                        themeStyles.chipText,
+                        autoBackupInterval === value && themeStyles.chipTextActive,
+                      ]}
+                    >
+                      {label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          )}
+        </HandDrawnCard>
+      </View>
+
+      <View style={styles.section}>
+        <HandDrawnCard>
+          <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             데이터 백업/복원
           </Text>
           <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.backupDescription]}>
@@ -401,6 +500,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               style={styles.backupButton}
             >
               백업하여 공유
+            </HandDrawnButton>
+            <HandDrawnButton
+              variant="secondary"
+              onPress={handleExportCsv}
+              disabled={backupRestoreBusy}
+              style={styles.backupButton}
+            >
+              CSV로 내보내기
             </HandDrawnButton>
             <HandDrawnButton
               variant="secondary"

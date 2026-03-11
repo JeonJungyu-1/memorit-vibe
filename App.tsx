@@ -25,6 +25,7 @@ import {
   getRecurringEventsForReschedule,
 } from './src/db/Database';
 import { rescheduleRecurringEventsIfNeeded } from './src/services/notificationService';
+import { runLocalAutoBackupIfNeeded } from './src/utils/backupRestore';
 import { useTheme } from 'tamagui';
 import config from './tamagui.config';
 import { ThemeProvider, useThemeMode } from './src/contexts/ThemeContext';
@@ -106,6 +107,11 @@ function AppContent() {
             await rescheduleRecurringEventsIfNeeded(recurringEvents);
           } catch (e) {
             console.warn('Recurring notification reschedule failed', e);
+          }
+          try {
+            await runLocalAutoBackupIfNeeded();
+          } catch (e) {
+            console.warn('Auto backup failed', e);
           }
         })();
       }
