@@ -10,7 +10,8 @@ import { useThemeMode } from '../contexts/ThemeContext';
 import {
   getThemeColor,
   WOBBLY_MD,
-  HARD_SHADOW,
+  WOBBLY_SM,
+  CARD_SHADOW,
   HAND_DRAWN_LIGHT,
   HAND_DRAWN_DARK,
 } from '../utils/themeColors';
@@ -58,9 +59,8 @@ export function HandDrawnCard({
     borderWidth: 2,
     borderColor,
     ...WOBBLY_MD,
-    shadowColor: borderColor,
-    ...HARD_SHADOW,
-    shadowOpacity: 1,
+    shadowColor: palette.border,
+    ...CARD_SHADOW,
   };
 
   return (
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 14,
     borderWidth: 1,
-    borderRadius: 2,
+    ...WOBBLY_SM,
     transform: [{ rotate: '-3deg' }],
     zIndex: 1,
   },
