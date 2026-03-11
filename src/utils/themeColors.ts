@@ -84,22 +84,41 @@ export const HARD_SHADOW = {
   elevation: 4,
 } as const;
 
+/** Hover 시 들어 보이는 효과 (2px 2px) */
+export const HARD_SHADOW_HOVER = {
+  shadowOffset: { width: 2, height: 2 },
+  shadowRadius: 0,
+  elevation: 2,
+} as const;
+
 export const HARD_SHADOW_STRONG = {
   shadowOffset: { width: 8, height: 8 },
   shadowRadius: 0,
   elevation: 8,
 } as const;
 
-/** 화면/카드 패딩 등 일관된 간격 */
+/** 카드용 은은한 하드 오프셋 그림자 (Design: 3px 3px 0 rgba(45,45,45,0.1)) */
+export const CARD_SHADOW = {
+  shadowOffset: { width: 3, height: 3 },
+  shadowRadius: 0,
+  shadowOpacity: 0.1,
+  elevation: 3,
+} as const;
+
+/** 화면/카드 패딩 등 일관된 간격 (Design: touch min 48px, gap-8 등) */
 export const SPACING = {
   screenPadding: 20,
   sectionGap: 24,
+  sectionGapLarge: 32,
   rowGap: 12,
   itemGap: 8,
-  touchTargetMin: 44,
+  touchTargetMin: 48,
 } as const;
 
-/** 기본 라운드 값 (버튼, 카드, 입력창) */
+/** 버튼 테두리 두께 (Design: border-[3px] 최소) */
+export const BUTTON_BORDER_WIDTH = 3;
+
+/** 기본 라운드 값 (버튼, 카드, 입력창) — Hand-Drawn에서는 WOBBLY_* 사용 권장 */
 export const RADIUS = {
   sm: 6,
   md: 10,
