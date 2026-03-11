@@ -23,7 +23,7 @@ import {
   CHECKLIST_EVENT_TYPES,
   type ChecklistTemplate,
 } from '../constants/checklistTemplates';
-import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, WOBBLY_SM } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderWidth: 2,
-    borderRadius: 10,
+    ...WOBBLY_SM,
   },
   chipText: {
     fontSize: FONT.bodySmall,
