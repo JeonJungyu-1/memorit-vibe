@@ -129,9 +129,12 @@ export const RADIUS = {
  * 폰트 크기 및 Hand-Drawn 폰트 패밀리.
  * fontFamily 값은 expo-font로 로드한 폰트 이름과 동일해야 함 (Kalam_700Bold, PatrickHand_400Regular).
  */
+/**
+ * Hand-Drawn: Large and readable. Headings vary in size (Design: Kalam marker, Patrick Hand body).
+ */
 export const FONT = {
-  title: 22,
-  sectionTitle: 17,
+  title: 24,
+  sectionTitle: 18,
   body: 16,
   bodySmall: 14,
   caption: 12,
