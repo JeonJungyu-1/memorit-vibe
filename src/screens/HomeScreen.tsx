@@ -452,6 +452,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               theme={calendarTheme}
               enableSwipeMonths
               hideExtraDays={false}
+              renderArrow={(direction) => (
+                <Text style={[styles.calendarArrow, { color: color }]}>
+                  {direction === 'left' ? '‹' : '›'}
+                </Text>
+              )}
             />
           </HandDrawnCard>
           <HandDrawnCard style={styles.calendarDayCard}>
@@ -576,6 +581,11 @@ const styles = StyleSheet.create({
   },
   calendarDayCard: {
     marginBottom: SPACING.sectionGap,
+  },
+  calendarArrow: {
+    fontSize: 28,
+    fontFamily: FONT.fontFamilyBody,
+    paddingHorizontal: 8,
   },
   upcomingCardWrap: {
     marginBottom: SPACING.rowGap,
