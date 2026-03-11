@@ -71,7 +71,34 @@ export const createTables = async (db: any) => {
   await db.executeSql(eventQuery);
   await migrateAddExpenseAmount(db);
   await migrateAddRecurring(db);
+  await migrateContactsProfile(db);
 };
+
+/**
+ * 연락처 테이블에 그룹·프로필 확장 컬럼 추가 (group, address, relationship, memo)
+ */
+async function migrateContactsProfile(db: any): Promise<void> {
+  const columns = ['group', 'address', 'relationship', 'memo'];
+  try {
+    const [result] = await db.executeSql('PRAGMA table_info(contacts);');
+    const rows = result?.rows ?? { length: 0 };
+    const existing = new Set<string>();
+    for (let i = 0; i < rows.length; i++) {
+      const col = rows.item(i);
+      if (col?.name) existing.add(col.name);
+    }
+    for (const col of columns) {
+      if (!existing.has(col)) {
+        const quoted = col === 'group' ? '"group"' : col;
+        await db.executeSql(
+          `ALTER TABLE contacts ADD COLUMN ${quoted} TEXT DEFAULT '';`,
+        );
+      }
+    }
+  } catch (e) {
+    console.warn('migrateContactsProfile failed', e);
+  }
+}
 
 /**
  * 기존 DB에 expense_amount 컬럼이 없으면 추가합니다.
@@ -407,14 +434,29 @@ export const getUpcomingExpenseForecast = async (
   }
 };
 
-export const getSavedContacts = async (db: any) => {
+export type SavedContactRow = {
+  contactId: string;
+  displayName: string;
+  phoneNumber: string;
+  group?: string;
+  address?: string;
+  relationship?: string;
+  memo?: string;
+};
+
+export const getSavedContacts = async (db: any): Promise<SavedContactRow[]> => {
   const [results] = await db.executeSql(
-    'SELECT contactId, displayName, phoneNumber FROM contacts;',
+    `SELECT contactId, displayName, phoneNumber,
+            COALESCE("group", '') as "group",
+            COALESCE(address, '') as address,
+            COALESCE(relationship, '') as relationship,
+            COALESCE(memo, '') as memo
+     FROM contacts;`,
   );
-  const rows = [] as any[];
+  const rows: SavedContactRow[] = [];
   const rowCount = results?.rows?.length ?? 0;
   for (let i = 0; i < rowCount; i++) {
-    rows.push(results.rows.item(i));
+    rows.push(results.rows.item(i) as SavedContactRow);
   }
   return rows;
 };
@@ -428,12 +470,22 @@ export const getContactsCount = async (db: any) => {
   return 0;
 };
 
+export type SaveContactInput = {
+  contactId: string;
+  displayName: string;
+  phoneNumber: string;
+  group?: string;
+  address?: string;
+  relationship?: string;
+  memo?: string;
+};
+
 export const saveContacts = async (
   db: any,
-  contacts: { contactId: string; displayName: string; phoneNumber: string }[],
+  contacts: SaveContactInput[],
 ) => {
   if (!contacts || contacts.length === 0) return;
-  const insertQuery = `INSERT OR REPLACE INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);`;
+  const insertQuery = `INSERT OR REPLACE INTO contacts (contactId, displayName, phoneNumber, "group", address, relationship, memo) VALUES (?, ?, ?, ?, ?, ?, ?);`;
   return new Promise<void>((resolve, reject) => {
     db.transaction(
       (tx: any) => {
@@ -443,7 +495,15 @@ export const saveContacts = async (
           const c = contacts[index++];
           tx.executeSql(
             insertQuery,
-            [c.contactId, c.displayName, c.phoneNumber ?? ''],
+            [
+              c.contactId,
+              c.displayName,
+              c.phoneNumber ?? '',
+              c.group ?? '',
+              c.address ?? '',
+              c.relationship ?? '',
+              c.memo ?? '',
+            ],
             () => runNext(),
             (_tx: any, err: any) => {
               reject(err);
@@ -460,6 +520,55 @@ export const saveContacts = async (
       () => resolve(),
     );
   });
+};
+
+/**
+ * 연락처 한 명의 프로필(그룹·주소·관계·메모 등)을 갱신합니다.
+ */
+export const updateContact = async (
+  db: any,
+  contactId: string,
+  fields: Partial<{
+    displayName: string;
+    phoneNumber: string;
+    group: string;
+    address: string;
+    relationship: string;
+    memo: string;
+  }>,
+): Promise<void> => {
+  const updates: string[] = [];
+  const values: any[] = [];
+  if (fields.displayName !== undefined) {
+    updates.push('displayName = ?');
+    values.push(fields.displayName);
+  }
+  if (fields.phoneNumber !== undefined) {
+    updates.push('phoneNumber = ?');
+    values.push(fields.phoneNumber);
+  }
+  if (fields.group !== undefined) {
+    updates.push('"group" = ?');
+    values.push(fields.group);
+  }
+  if (fields.address !== undefined) {
+    updates.push('address = ?');
+    values.push(fields.address);
+  }
+  if (fields.relationship !== undefined) {
+    updates.push('relationship = ?');
+    values.push(fields.relationship);
+  }
+  if (fields.memo !== undefined) {
+    updates.push('memo = ?');
+    values.push(fields.memo);
+  }
+  if (updates.length === 0) return;
+  values.push(contactId);
+  await db.executeSql(
+    `UPDATE contacts SET ${updates.join(', ')} WHERE contactId = ?;`,
+    values,
+  );
 };
 
 /**
@@ -506,6 +615,10 @@ export type BackupContact = {
   contactId: string;
   displayName: string;
   phoneNumber: string;
+  group?: string;
+  address?: string;
+  relationship?: string;
+  memo?: string;
 };
 
 /** 백업용 이벤트 행 타입 (id 제외, 복원 시 재부여) */
@@ -536,7 +649,12 @@ const BACKUP_APP_ID = 'memorit';
  */
 export const exportBackupData = async (db: any): Promise<BackupData> => {
   const [contactsResults] = await db.executeSql(
-    'SELECT contactId, displayName, phoneNumber FROM contacts ORDER BY id ASC;',
+    `SELECT contactId, displayName, phoneNumber,
+            COALESCE("group", '') as "group",
+            COALESCE(address, '') as address,
+            COALESCE(relationship, '') as relationship,
+            COALESCE(memo, '') as memo
+     FROM contacts ORDER BY id ASC;`,
   );
   const contacts: BackupContact[] = [];
   const contactCount = contactsResults?.rows?.length ?? 0;
@@ -546,6 +664,10 @@ export const exportBackupData = async (db: any): Promise<BackupData> => {
       contactId: row.contactId,
       displayName: row.displayName ?? '',
       phoneNumber: row.phoneNumber ?? '',
+      group: row.group ?? '',
+      address: row.address ?? '',
+      relationship: row.relationship ?? '',
+      memo: row.memo ?? '',
     });
   }
 
@@ -593,7 +715,7 @@ export const restoreBackupData = async (
     db.transaction(
       (tx: any) => {
         const insertContact =
-          'INSERT INTO contacts (contactId, displayName, phoneNumber) VALUES (?, ?, ?);';
+          'INSERT INTO contacts (contactId, displayName, phoneNumber, "group", address, relationship, memo) VALUES (?, ?, ?, ?, ?, ?, ?);';
         const insertEvent =
           'INSERT INTO events (contactId, type, amount, expense_amount, date, memo, recurring) VALUES (?, ?, ?, ?, ?, ?, ?);';
 
@@ -639,6 +761,10 @@ export const restoreBackupData = async (
                     String(c.contactId),
                     String(c.displayName ?? ''),
                     String(c.phoneNumber ?? ''),
+                    String(c.group ?? ''),
+                    String(c.address ?? ''),
+                    String(c.relationship ?? ''),
+                    String(c.memo ?? ''),
                   ],
                   () => runNextContact(),
                   (_tx: any, err: any) => {

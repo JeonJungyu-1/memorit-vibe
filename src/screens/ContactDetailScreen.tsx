@@ -24,7 +24,9 @@ import {
   getEventsByContactId,
   saveEvent,
   deleteEvent,
+  updateContact,
   type Event,
+  type SavedContactRow,
 } from '../db/Database';
 import {
   scheduleEventNotification,
@@ -50,15 +52,16 @@ import {
   WOBBLY_LG,
   HARD_SHADOW,
 } from '../utils/themeColors';
+import {
+  CONTACT_GROUP_OPTIONS,
+  getContactGroupLabel,
+  getContactGroupEmoji,
+} from '../constants/contactGroups';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 import { HandDrawnInput } from '../components/HandDrawnInput';
 
-type SavedContact = {
-  contactId: string;
-  displayName: string;
-  phoneNumber: string;
-};
+type SavedContact = SavedContactRow;
 
 const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   navigation,
@@ -70,6 +73,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   const [events, setEvents] = useState<Event[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [notificationDisplay, setNotificationDisplay] = useState<{
     daysBefore: number;
@@ -226,7 +230,27 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
       </View>
 
       <HandDrawnCard style={styles.headerCard}>
-        <Text style={[styles.name, themeStyles.name]}>{contact.displayName || '이름 없음'}</Text>
+        <View style={styles.headerTitleRow}>
+          <Text style={[styles.name, themeStyles.name]}>{contact.displayName || '이름 없음'}</Text>
+          <HandDrawnButton
+            variant="secondary"
+            onPress={() => setShowEditProfile(true)}
+            style={styles.editProfileButton}
+          >
+            프로필 수정
+          </HandDrawnButton>
+        </View>
+        {(contact.group ?? '').trim() ? (
+          <Text style={[styles.groupBadge, { color: accent }]}>
+            {getContactGroupEmoji(contact.group)}{' '}
+            {getContactGroupLabel(contact.group)}
+          </Text>
+        ) : null}
+        {(contact.relationship ?? '').trim() ? (
+          <Text style={[styles.profileField, themeStyles.phoneHint]}>
+            관계: {contact.relationship}
+          </Text>
+        ) : null}
         {contact.phoneNumber ? (
           <Pressable style={styles.phoneRow} onPress={handleCall}>
             <Text style={[styles.phone, themeStyles.phone]}>{contact.phoneNumber}</Text>
@@ -235,6 +259,14 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
         ) : (
           <Text style={[styles.phoneEmpty, themeStyles.phoneEmpty]}>전화번호 없음</Text>
         )}
+        {(contact.address ?? '').trim() ? (
+          <Text style={[styles.profileField, themeStyles.phoneHint]}>
+            주소: {contact.address}
+          </Text>
+        ) : null}
+        {(contact.memo ?? '').trim() ? (
+          <Text style={[styles.profileField, themeStyles.phoneHint]}>메모: {contact.memo}</Text>
+        ) : null}
       </HandDrawnCard>
 
       <View style={styles.eventsSection}>
@@ -295,6 +327,9 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
                   {getEventDisplayText(item.type)}
                 </Text>
                 <Text style={[styles.eventDate, themeStyles.eventDate]}>{item.date}</Text>
+                {item.recurring ? (
+                  <Text style={[styles.eventMemo, themeStyles.eventMemo]}>매년 반복</Text>
+                ) : null}
                 {triggerInfo ? (
                   <Text style={[styles.eventMemo, themeStyles.eventMemo]}>
                     {triggerInfo.label}
@@ -339,6 +374,15 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
           onClose={() => {
             setShowAddEvent(false);
             setEditingEvent(null);
+            loadData();
+          }}
+        />
+      )}
+      {showEditProfile && contact && (
+        <EditProfileModal
+          contact={contact}
+          onClose={() => {
+            setShowEditProfile(false);
             loadData();
           }}
         />
@@ -607,6 +651,169 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
   );
 };
 
+type EditProfileModalProps = {
+  contact: SavedContact;
+  onClose: () => void;
+};
+
+const EditProfileModal: React.FC<EditProfileModalProps> = ({
+  contact,
+  onClose,
+}) => {
+  const modalTheme = useTheme();
+  const [displayName, setDisplayName] = useState(contact.displayName ?? '');
+  const [phoneNumber, setPhoneNumber] = useState(contact.phoneNumber ?? '');
+  const [group, setGroup] = useState(contact.group ?? '');
+  const [address, setAddress] = useState(contact.address ?? '');
+  const [relationship, setRelationship] = useState(contact.relationship ?? '');
+  const [memo, setMemo] = useState(contact.memo ?? '');
+  const [saving, setSaving] = useState(false);
+
+  const modalAccent = getThemeColor(modalTheme, 'blue9') || '#0a7ea4';
+  const modalBg = getThemeColor(modalTheme, 'background') || '#fff';
+  const modalColor = getThemeColor(modalTheme, 'color') || '#333';
+  const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#ddd';
+  const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f9f9f9';
+
+  const modalThemeStyles = useMemo(
+    () => ({
+      box: {
+        backgroundColor: modalBg,
+        borderColor: modalBorder,
+        shadowColor: modalBorder,
+        ...WOBBLY_LG,
+        ...HARD_SHADOW,
+        borderWidth: 2,
+        shadowOpacity: 1,
+      },
+      title: { color: modalColor, fontFamily: FONT.fontFamilyHeading },
+      label: { color: modalColor, fontFamily: FONT.fontFamilyBody },
+      typeButton: { borderColor: modalBorder, ...WOBBLY_SM, borderWidth: 2 },
+      typeButtonActive: { backgroundColor: modalAccent, borderColor: modalAccent },
+      typeButtonText: { color: modalColor, fontFamily: FONT.fontFamilyBody },
+      typeButtonTextActive: { color: '#fff', fontFamily: FONT.fontFamilyBody },
+    }),
+    [modalBg, modalColor, modalBorder, modalBgHover, modalAccent],
+  );
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const db = await getDBConnection();
+      await updateContact(db, contact.contactId, {
+        displayName: displayName.trim() || contact.displayName,
+        phoneNumber: phoneNumber.trim(),
+        group: group.trim(),
+        address: address.trim(),
+        relationship: relationship.trim(),
+        memo: memo.trim(),
+      });
+      Toast.show({
+        type: 'success',
+        text1: '저장 완료',
+        text2: '프로필이 수정되었습니다.',
+      });
+      onClose();
+    } catch (e) {
+      console.error('Failed to update contact profile', e);
+      Toast.show({
+        type: 'error',
+        text1: '저장 실패',
+        text2: '프로필 저장에 실패했습니다. 다시 시도해주세요.',
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Modal
+      visible
+      transparent
+      animationType="fade"
+      onRequestClose={onClose}
+    >
+      <Pressable style={modalStyles.overlay} onPress={onClose}>
+        <Pressable style={[modalStyles.box, modalThemeStyles.box]} onPress={e => e.stopPropagation()}>
+          <Text style={[modalStyles.title, modalThemeStyles.title]}>프로필 수정</Text>
+          <ScrollView keyboardShouldPersistTaps="handled">
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>이름</Text>
+            <HandDrawnInput
+              value={displayName}
+              onChangeText={setDisplayName}
+              placeholder="이름"
+              style={modalStyles.inputSpacer}
+            />
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>전화번호</Text>
+            <HandDrawnInput
+              value={phoneNumber}
+              onChangeText={setPhoneNumber}
+              placeholder="전화번호"
+              keyboardType="phone-pad"
+              style={modalStyles.inputSpacer}
+            />
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>그룹</Text>
+            <View style={modalStyles.typeRow}>
+              {CONTACT_GROUP_OPTIONS.map(({ value, label, emoji }) => (
+                <Pressable
+                  key={value}
+                  style={[
+                    modalStyles.typeButton,
+                    modalThemeStyles.typeButton,
+                    group === value && modalThemeStyles.typeButtonActive,
+                  ]}
+                  onPress={() => setGroup(value)}
+                >
+                  <Text
+                    style={[
+                      modalStyles.typeButtonText,
+                      modalThemeStyles.typeButtonText,
+                      group === value && modalThemeStyles.typeButtonTextActive,
+                    ]}
+                  >
+                    {emoji} {label}
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>관계 (선택)</Text>
+            <HandDrawnInput
+              value={relationship}
+              onChangeText={setRelationship}
+              placeholder="예: 친구, 직장 동료"
+              style={modalStyles.inputSpacer}
+            />
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>주소 (선택)</Text>
+            <HandDrawnInput
+              value={address}
+              onChangeText={setAddress}
+              placeholder="주소"
+              style={modalStyles.inputSpacer}
+            />
+            <Text style={[modalStyles.label, modalThemeStyles.label]}>메모 (선택)</Text>
+            <HandDrawnInput
+              value={memo}
+              onChangeText={setMemo}
+              placeholder="메모"
+              multiline
+              inputStyle={modalStyles.inputMultiline}
+              style={modalStyles.inputSpacer}
+            />
+          </ScrollView>
+          <View style={modalStyles.actions}>
+            <HandDrawnButton variant="secondary" onPress={onClose}>
+              취소
+            </HandDrawnButton>
+            <HandDrawnButton variant="primary" onPress={handleSave} disabled={saving}>
+              {saving ? '저장 중…' : '저장'}
+            </HandDrawnButton>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+};
+
 const modalStyles = StyleSheet.create({
   overlay: {
     flex: 1,
@@ -693,6 +900,25 @@ const styles = StyleSheet.create({
   },
   headerCard: {
     marginBottom: SPACING.sectionGap,
+  },
+  headerTitleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: SPACING.itemGap,
+  },
+  editProfileButton: {
+    alignSelf: 'flex-start',
+  },
+  groupBadge: {
+    fontSize: FONT.bodySmall,
+    fontWeight: '600',
+    marginBottom: SPACING.itemGap,
+  },
+  profileField: {
+    fontSize: FONT.bodySmall,
+    marginTop: 4,
   },
   name: {
     fontSize: FONT.title,

@@ -13,14 +13,20 @@ import Toast from 'react-native-toast-message';
 import { useTheme } from 'tamagui';
 import { YStack, styled } from 'tamagui';
 import type { RootStackParamList } from '../navigation/types';
-import { useContacts } from '../hooks/useContacts';
+import { useContacts, type ContactType } from '../hooks/useContacts';
 import {
   getDBConnection,
   createTables,
   getContactsCount,
   saveContacts,
   getSavedContacts,
+  type SavedContactRow,
 } from '../db/Database';
+import {
+  CONTACT_GROUP_FILTER_OPTIONS,
+  getContactGroupLabel,
+  getContactGroupEmoji,
+} from '../constants/contactGroups';
 import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
 import { HandDrawnButton } from './HandDrawnButton';
 import { HandDrawnInput } from './HandDrawnInput';
@@ -82,10 +88,19 @@ const ContactList: React.FC = () => {
     });
   }, []);
   const { contacts, loading } = useContacts({ onPermissionDenied, onFetchError });
+
+  type ImportedContactItem = SavedContactRow & {
+    recordID?: string;
+    phoneNumbers?: { number?: string }[];
+  };
+
+  type ListItem = ContactType | ImportedContactItem;
+
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mode, setMode] = useState<'select' | 'imported'>('select');
-  const [importedContacts, setImportedContacts] = useState<any[]>([]);
+  const [importedContacts, setImportedContacts] = useState<ImportedContactItem[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [groupFilter, setGroupFilter] = useState<string>('');
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => {
@@ -103,9 +118,7 @@ const ContactList: React.FC = () => {
   const clearSelection = () => setSelectedIds(new Set());
 
   const importSelected = async () => {
-    const picked = contacts.filter((c: any) => selectedIds.has(c.recordID));
-    setImportedContacts(picked);
-    setMode('imported');
+    const picked = contacts.filter((c: ContactType) => selectedIds.has(c.recordID));
     try {
       const db = await getDBConnection();
       await createTables(db);
@@ -116,8 +129,19 @@ const ContactList: React.FC = () => {
           Array.isArray(p.phoneNumbers) && p.phoneNumbers.length > 0
             ? p.phoneNumbers[0].number ?? ''
             : '',
+        group: '',
+        address: '',
+        relationship: '',
+        memo: '',
       }));
       await saveContacts(db, toSave);
+      const asImported: ImportedContactItem[] = toSave.map(t => ({
+        ...t,
+        recordID: t.contactId,
+        phoneNumbers: t.phoneNumber ? [{ number: t.phoneNumber }] : [],
+      }));
+      setImportedContacts(asImported);
+      setMode('imported');
       Toast.show({
         type: 'success',
         text1: '저장 완료',
@@ -136,17 +160,36 @@ const ContactList: React.FC = () => {
 
   const selectedCount = useMemo(() => selectedIds.size, [selectedIds]);
 
-  const listToShow = mode === 'select' ? contacts : importedContacts;
+  const listToShow: ListItem[] = mode === 'select' ? contacts : importedContacts;
 
-  const filteredList = useMemo(() => {
+  const filteredList = useMemo((): ListItem[] => {
     const q = normalizeSearchQuery(searchQuery);
-    if (!q) return listToShow;
-    const normalizedQ = q;
-    return listToShow.filter((item: any) => {
-      const text = normalizeSearchQuery(getSearchableText(item));
-      return text.includes(normalizedQ);
-    });
-  }, [listToShow, searchQuery]);
+    let list: ListItem[] = listToShow;
+    if (q) {
+      const normalizedQ = q;
+      list = list.filter((item: ListItem) => {
+        const text = normalizeSearchQuery(getSearchableText(item));
+        return text.includes(normalizedQ);
+      });
+    }
+    if (mode === 'imported' && groupFilter) {
+      list = list.filter(
+        (item): item is ImportedContactItem =>
+          'group' in item && (item.group ?? '') === groupFilter,
+      );
+    }
+    if (mode === 'imported') {
+      const order = ['family', 'work', 'friend', 'other', ''];
+      list = [...list].sort((a, b) => {
+        const ai = order.indexOf('group' in a ? (a.group ?? '') : '');
+        const bi = order.indexOf('group' in b ? (b.group ?? '') : '');
+        const idx = (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
+        if (idx !== 0) return idx;
+        return (a.displayName ?? '').localeCompare(b.displayName ?? '');
+      });
+    }
+    return list;
+  }, [listToShow, searchQuery, mode, groupFilter]);
 
   useEffect(() => {
     (async () => {
@@ -156,9 +199,11 @@ const ContactList: React.FC = () => {
         const count = await getContactsCount(db);
         if (count > 0) {
           const saved = await getSavedContacts(db);
-          const normalized = (saved as any[]).map(s => ({
+          const normalized: ImportedContactItem[] = saved.map(s => ({
+            ...s,
             recordID: s.contactId,
-            displayName: s.displayName,
+            displayName: s.displayName ?? '',
+            phoneNumber: s.phoneNumber ?? '',
             phoneNumbers: s.phoneNumber ? [{ number: s.phoneNumber }] : [],
           }));
           setImportedContacts(normalized);
@@ -215,38 +260,95 @@ const ContactList: React.FC = () => {
         style={styles.searchInputWrap}
       />
 
-      <FlatList
+      {mode === 'imported' && (
+        <View style={styles.groupFilterRow}>
+          <Pressable
+            style={[
+              styles.groupChip,
+              !groupFilter && { backgroundColor: accent, borderColor: accent },
+            ]}
+            onPress={() => setGroupFilter('')}
+          >
+            <Text
+              style={[
+                styles.groupChipText,
+                !groupFilter && styles.groupChipTextActive,
+              ]}
+            >
+              전체
+            </Text>
+          </Pressable>
+          {CONTACT_GROUP_FILTER_OPTIONS.map(({ value, label, emoji }) => (
+            <Pressable
+              key={value}
+              style={[
+                styles.groupChip,
+                groupFilter === value && {
+                  backgroundColor: accent,
+                  borderColor: accent,
+                },
+              ]}
+              onPress={() => setGroupFilter(value)}
+            >
+              <Text
+                style={[
+                  styles.groupChipText,
+                  groupFilter === value && styles.groupChipTextActive,
+                ]}
+              >
+                {emoji} {label}
+              </Text>
+            </Pressable>
+          ))}
+        </View>
+      )}
+
+      <FlatList<ListItem>
         data={filteredList}
-        keyExtractor={item => item.recordID ?? item.contactId}
-        renderItem={({ item }) => (
+        keyExtractor={item =>
+          'contactId' in item ? item.contactId : item.recordID ?? ''
+        }
+        renderItem={({ item }) => {
+          const itemId =
+            'contactId' in item ? item.contactId : item.recordID ?? '';
+          return (
           <Pressable
             onPress={() =>
-              mode === 'select' ? toggleSelect(item.recordID) : null
+              mode === 'select' ? toggleSelect(itemId) : null
             }
             style={[styles.contactRow, themeStyles.contactRow]}
           >
             {mode === 'select' && (
               <Checkbox>
                 <Text style={styles.checkMark}>
-                  {selectedIds.has(item.recordID) ? '✓' : ''}
+                  {selectedIds.has(itemId) ? '✓' : ''}
                 </Text>
               </Checkbox>
             )}
             <YStack flex={1}>
-              <Text style={[styles.contactName, themeStyles.contactName]}>
-                {item.displayName || '이름 없음'}
-              </Text>
+              <View style={styles.contactNameRow}>
+                <Text style={[styles.contactName, themeStyles.contactName]}>
+                  {item.displayName || '이름 없음'}
+                </Text>
+                {mode === 'imported' && 'group' in item && (item as ImportedContactItem).group ? (
+                  <Text style={[styles.groupChipSmall, themeStyles.phone]}>
+                    {getContactGroupEmoji((item as ImportedContactItem).group ?? '')}{' '}
+                    {getContactGroupLabel((item as ImportedContactItem).group ?? '')}
+                  </Text>
+                ) : null}
+              </View>
               {Array.isArray(item.phoneNumbers) &&
               item.phoneNumbers.length > 0 ? (
                 <Text style={[styles.phone, themeStyles.phone]}>
                   {item.phoneNumbers[0].number || '번호 없음'}
                 </Text>
-              ) : item.phoneNumber ? (
+              ) : 'phoneNumber' in item && item.phoneNumber ? (
                 <Text style={[styles.phone, themeStyles.phone]}>{item.phoneNumber}</Text>
               ) : null}
             </YStack>
           </Pressable>
-        )}
+          );
+        }}
       />
     </Container>
   );
@@ -286,6 +388,35 @@ const styles = StyleSheet.create({
   },
   searchInputWrap: {
     marginBottom: SPACING.rowGap,
+  },
+  groupFilterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: SPACING.rowGap,
+  },
+  groupChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  groupChipText: {
+    fontSize: FONT.bodySmall,
+    fontFamily: FONT.fontFamilyBody,
+  },
+  groupChipTextActive: {
+    color: '#fff',
+  },
+  contactNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  groupChipSmall: {
+    fontSize: FONT.caption,
   },
   contactRow: {
     flexDirection: 'row',

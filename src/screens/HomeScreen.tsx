@@ -23,8 +23,14 @@ import {
   getUpcomingEvents,
   getEventsByDateRange,
   removeContact,
+  type SavedContactRow,
 } from '../db/Database';
 import type { EventWithDisplayName } from '../db/Database';
+import {
+  CONTACT_GROUP_FILTER_OPTIONS,
+  getContactGroupLabel,
+  getContactGroupEmoji,
+} from '../constants/contactGroups';
 import { cancelEventNotification } from '../services/notificationService';
 import { getEventDisplayText } from '../constants/eventTypes';
 import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
@@ -52,11 +58,7 @@ type UpcomingEventItem = {
   displayName?: string;
 };
 
-export type SavedContact = {
-  contactId: string;
-  displayName: string;
-  phoneNumber: string;
-};
+export type SavedContact = SavedContactRow;
 
 /** 검색어 정규화: 소문자·공백 제거 후 includes 매칭용 */
 function normalizeSearchQuery(q: string): string {
@@ -81,6 +83,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [groupFilter, setGroupFilter] = useState<string>('');
   const [calendarCurrent, setCalendarCurrent] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`;
@@ -111,15 +114,26 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const filteredContacts = useMemo(() => {
     const q = normalizeSearchQuery(searchQuery);
-    return q ? contacts.filter(c => matchContact(c, q)) : contacts;
-  }, [contacts, searchQuery]);
+    let list = q ? contacts.filter(c => matchContact(c, q)) : contacts;
+    if (groupFilter) {
+      list = list.filter(c => (c.group ?? '') === groupFilter);
+    }
+    const order = ['family', 'work', 'friend', 'other', ''];
+    return [...list].sort((a, b) => {
+      const ai = order.indexOf(a.group ?? '');
+      const bi = order.indexOf(b.group ?? '');
+      const idx = (ai === -1 ? order.length : ai) - (bi === -1 ? order.length : bi);
+      if (idx !== 0) return idx;
+      return (a.displayName ?? '').localeCompare(b.displayName ?? '');
+    });
+  }, [contacts, searchQuery, groupFilter]);
 
   const loadContacts = useCallback(async () => {
     try {
       const db = await getDBConnection();
       await createTables(db);
       const saved = await getSavedContacts(db);
-      setContacts((saved as SavedContact[]) ?? []);
+      setContacts(saved ?? []);
       const upcoming = await getUpcomingEvents(db, UPCOMING_EVENTS_LIMIT);
       setUpcomingEvents(upcoming as UpcomingEventItem[]);
     } catch (e) {
@@ -349,6 +363,47 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             style={styles.searchInput}
           />
 
+          <View style={styles.groupFilterRow}>
+            <Pressable
+              style={[
+                styles.groupChip,
+                !groupFilter && { backgroundColor: accent, borderColor: accent },
+              ]}
+              onPress={() => setGroupFilter('')}
+            >
+              <Text
+                style={[
+                  styles.groupChipText,
+                  !groupFilter && styles.groupChipTextActive,
+                ]}
+              >
+                전체
+              </Text>
+            </Pressable>
+            {CONTACT_GROUP_FILTER_OPTIONS.map(({ value, label, emoji }) => (
+              <Pressable
+                key={value}
+                style={[
+                  styles.groupChip,
+                  groupFilter === value && {
+                    backgroundColor: accent,
+                    borderColor: accent,
+                  },
+                ]}
+                onPress={() => setGroupFilter(value)}
+              >
+                <Text
+                  style={[
+                    styles.groupChipText,
+                    groupFilter === value && styles.groupChipTextActive,
+                  ]}
+                >
+                  {emoji} {label}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
           <FlatList
         data={filteredContacts}
         keyExtractor={item => item.contactId}
@@ -361,9 +416,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             }
             onLongPress={() => handleRemoveContact(item)}
           >
-            <Text style={[styles.contactName, themeStyles.contactName]}>
-              {item.displayName || '이름 없음'}
-            </Text>
+            <View style={styles.contactNameRow}>
+              <Text style={[styles.contactName, themeStyles.contactName]}>
+                {item.displayName || '이름 없음'}
+              </Text>
+              {(item.group ?? '').trim() ? (
+                <Text style={[styles.groupChipSmall, themeStyles.phone]}>
+                  {getContactGroupEmoji(item.group)} {getContactGroupLabel(item.group)}
+                </Text>
+              ) : null}
+            </View>
             {item.phoneNumber ? (
               <Text style={[styles.phone, themeStyles.phone]}>{item.phoneNumber}</Text>
             ) : null}
@@ -470,6 +532,36 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     marginBottom: SPACING.rowGap,
+  },
+  groupFilterRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: SPACING.rowGap,
+  },
+  groupChip: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  groupChipText: {
+    fontSize: FONT.bodySmall,
+    fontFamily: FONT.fontFamilyBody,
+  },
+  groupChipTextActive: {
+    color: '#fff',
+  },
+  contactNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    flexWrap: 'wrap',
+  },
+  groupChipSmall: {
+    fontSize: FONT.caption,
+    fontFamily: FONT.fontFamilyBody,
   },
   calendarScroll: {
     flex: 1,
