@@ -208,6 +208,107 @@ export const getUpcomingEvents = async (
   }
 };
 
+/** 연도·월별 지출 요약 (expense_amount 기준, 과거 데이터) */
+export type YearMonthSummary = {
+  year: string;
+  month: string;
+  totalExpense: number;
+  count: number;
+};
+
+export const getExpenseSummaryByYearMonth = async (
+  db: any,
+): Promise<YearMonthSummary[]> => {
+  try {
+    const [results] = await db.executeSql(
+      `SELECT strftime('%Y', date) as year, strftime('%m', date) as month,
+              SUM(COALESCE(expense_amount, 0)) as totalExpense, COUNT(*) as count
+       FROM events
+       WHERE date IS NOT NULL AND date != ''
+       GROUP BY year, month
+       ORDER BY year DESC, month DESC
+       LIMIT 24;`,
+    );
+    const rows: YearMonthSummary[] = [];
+    const rowCount = results?.rows?.length ?? 0;
+    for (let i = 0; i < rowCount; i++) {
+      const item = results.rows.item(i);
+      rows.push({
+        year: String(item.year ?? ''),
+        month: String(item.month ?? ''),
+        totalExpense: Number(item.totalExpense) || 0,
+        count: Number(item.count) || 0,
+      });
+    }
+    return rows;
+  } catch (e) {
+    console.warn('getExpenseSummaryByYearMonth failed', e);
+    return [];
+  }
+};
+
+/** 유형별 지출 통계 (건수·총액) */
+export type TypeSummary = {
+  type: string;
+  totalExpense: number;
+  count: number;
+};
+
+export const getExpenseSummaryByType = async (
+  db: any,
+): Promise<TypeSummary[]> => {
+  try {
+    const [results] = await db.executeSql(
+      `SELECT type, SUM(COALESCE(expense_amount, 0)) as totalExpense, COUNT(*) as count
+       FROM events
+       GROUP BY type
+       ORDER BY totalExpense DESC;`,
+    );
+    const rows: TypeSummary[] = [];
+    const rowCount = results?.rows?.length ?? 0;
+    for (let i = 0; i < rowCount; i++) {
+      const item = results.rows.item(i);
+      rows.push({
+        type: String(item.type ?? 'other'),
+        totalExpense: Number(item.totalExpense) || 0,
+        count: Number(item.count) || 0,
+      });
+    }
+    return rows;
+  } catch (e) {
+    console.warn('getExpenseSummaryByType failed', e);
+    return [];
+  }
+};
+
+/** N개월 내 예정 이벤트의 지출 합계 (다가오는 지출 예측) */
+export const getUpcomingExpenseForecast = async (
+  db: any,
+  monthsAhead: number,
+): Promise<number> => {
+  try {
+    const today = new Date();
+    const end = new Date(today);
+    end.setMonth(end.getMonth() + monthsAhead);
+    const todayStr = today.toISOString().slice(0, 10);
+    const endStr = end.toISOString().slice(0, 10);
+    const [results] = await db.executeSql(
+      `SELECT COALESCE(SUM(expense_amount), 0) as total
+       FROM events
+       WHERE date >= ? AND date <= ?;`,
+      [todayStr, endStr],
+    );
+    if (results?.rows?.length > 0) {
+      const total = results.rows.item(0).total;
+      return Number(total) || 0;
+    }
+    return 0;
+  } catch (e) {
+    console.warn('getUpcomingExpenseForecast failed', e);
+    return 0;
+  }
+};
+
 export const getSavedContacts = async (db: any) => {
   const [results] = await db.executeSql(
     'SELECT contactId, displayName, phoneNumber FROM contacts;',

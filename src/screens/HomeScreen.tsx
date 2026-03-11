@@ -125,6 +125,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     navigation.navigate('Settings');
   };
 
+  const handleOpenStatistics = () => {
+    navigation.navigate('Statistics');
+  };
+
   const handleRemoveContact = useCallback(
     (contact: SavedContact) => {
       Alert.alert(
@@ -208,9 +212,14 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     <Container flex={1} padding={SPACING.screenPadding} backgroundColor="$background">
       <View style={styles.headerRow}>
         <Text style={[styles.header, { color }]}>Memorit</Text>
-        <HandDrawnButton variant="secondary" onPress={handleOpenSettings}>
-          설정
-        </HandDrawnButton>
+        <View style={styles.headerButtons}>
+          <HandDrawnButton variant="secondary" onPress={handleOpenStatistics}>
+            통계
+          </HandDrawnButton>
+          <HandDrawnButton variant="secondary" onPress={handleOpenSettings}>
+            설정
+          </HandDrawnButton>
+        </View>
       </View>
       <Text style={[styles.summary, themeStyles.summary]}>{contacts.length}명의 연락처</Text>
 
@@ -261,6 +270,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: SPACING.itemGap,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: SPACING.itemGap,
   },
   header: {
     fontSize: FONT.title,

@@ -15,6 +15,7 @@ import ContactList from './src/components/ContactList';
 import HomeScreen from './src/screens/HomeScreen';
 import ContactDetailScreen from './src/screens/ContactDetailScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
+import StatisticsScreen from './src/screens/StatisticsScreen';
 import { getDBConnection, createTables, getContactsCount } from './src/db/Database';
 import { useTheme } from 'tamagui';
 import config from './tamagui.config';
@@ -113,6 +114,7 @@ function AppContent() {
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Statistics" component={StatisticsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
       <Toast />
