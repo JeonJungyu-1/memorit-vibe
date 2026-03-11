@@ -18,7 +18,7 @@ import {
   type TypeSummary,
 } from '../db/Database';
 import { getEventDisplayText } from '../constants/eventTypes';
-import { getThemeColor, SPACING, FONT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, HAND_DRAWN_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 
@@ -44,6 +44,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
   const colorMuted =
     getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
+  const backgroundColor = getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
 
   const loadStats = useCallback(async () => {
     try {
@@ -89,14 +90,14 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
 
   if (loading) {
     return (
-      <View style={[styles.container, styles.centered]}>
+      <View style={[styles.container, styles.centered, { backgroundColor }]}>
         <ActivityIndicator size="large" color={accent} />
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.headerRow}>
         <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
           ← 뒤로

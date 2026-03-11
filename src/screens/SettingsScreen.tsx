@@ -36,7 +36,7 @@ import {
 } from '../utils/autoBackupSettings';
 import { useThemeMode } from '../contexts/ThemeContext';
 import type { ThemeMode } from '../utils/themeSettings';
-import { SPACING, FONT, WOBBLY_SM, HARD_SHADOW } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, WOBBLY_SM, HARD_SHADOW, HAND_DRAWN_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 
@@ -125,13 +125,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const themeStyles = useMemo(
     () =>
       createThemeStyles({
-        background: theme.background?.val ?? theme.background ?? '#fff',
-        color: theme.color?.val ?? theme.color ?? '#333',
-        colorMuted: theme.color11?.val ?? theme.color11 ?? '#666',
-        borderColor: theme.borderColor?.val ?? theme.borderColor ?? '#ddd',
-        backgroundHover: theme.backgroundHover?.val ?? theme.backgroundHover ?? '#f9f9f9',
-        accent: theme.blue9?.val ?? theme.blue9 ?? '#0a7ea4',
-        accentForeground: theme.blue9?.val ? '#fff' : '#fff',
+        background: getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background,
+        color: getThemeColor(theme, 'color') || HAND_DRAWN_LIGHT.foreground,
+        colorMuted: getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || HAND_DRAWN_LIGHT.mutedText,
+        borderColor: getThemeColor(theme, 'borderColor') || HAND_DRAWN_LIGHT.border,
+        backgroundHover: getThemeColor(theme, 'backgroundHover') ?? HAND_DRAWN_LIGHT.cardBg,
+        accent: getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || HAND_DRAWN_LIGHT.secondaryAccent,
+        accentForeground: '#fff',
       }),
     [theme],
   );
@@ -303,11 +303,13 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     );
   }, [backupRestoreBusy, navigation]);
 
-  const accent = theme.blue9?.val ?? theme.blue9 ?? '#0a7ea4';
+  const accent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || HAND_DRAWN_LIGHT.secondaryAccent;
+
+  const containerBg = getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
 
   if (loading) {
     return (
-      <View style={[styles.container, themeStyles.container]}>
+      <View style={[styles.container, { backgroundColor: containerBg }]}>
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={accent} />
         </View>

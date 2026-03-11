@@ -286,7 +286,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderListHeader = () =>
     upcomingEvents.length > 0 ? (
-      <HandDrawnCard style={styles.upcomingCardWrap}>
+      <HandDrawnCard decoration="tape" style={styles.upcomingCardWrap}>
         <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
           다가오는 기념일
         </Text>
@@ -442,7 +442,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </>
       ) : (
         <ScrollView style={styles.calendarScroll} showsVerticalScrollIndicator={false}>
-          <HandDrawnCard style={styles.calendarCard}>
+          <HandDrawnCard decoration="tack" style={styles.calendarCard}>
             <Calendar
               current={calendarCurrent}
               onDayPress={(day) => setSelectedCalendarDate(day.dateString)}

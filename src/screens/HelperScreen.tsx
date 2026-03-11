@@ -23,7 +23,7 @@ import {
   CHECKLIST_EVENT_TYPES,
   type ChecklistTemplate,
 } from '../constants/checklistTemplates';
-import { getThemeColor, SPACING, FONT, WOBBLY_SM } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, WOBBLY_SM, HAND_DRAWN_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 
@@ -73,8 +73,10 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
     [checklistEventKey],
   );
 
+  const backgroundColor = getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
+
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.headerRow}>
         <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
           ← 뒤로
