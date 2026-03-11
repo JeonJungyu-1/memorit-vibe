@@ -366,6 +366,28 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
       <View style={styles.section}>
         <HandDrawnCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
+            오프라인 사용
+          </Text>
+          <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.infoDescription]}>
+            모든 연락처와 경조사 데이터는 기기에만 저장됩니다. 인터넷 연결 없이 앱을 사용할 수 있습니다.
+          </Text>
+        </HandDrawnCard>
+      </View>
+
+      <View style={styles.section}>
+        <HandDrawnCard>
+          <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
+            홈 화면 위젯
+          </Text>
+          <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.infoDescription]}>
+            iOS/Android 홈 화면 위젯은 현재 버전에서 지원하지 않습니다. 다가오는 경조사는 앱 홈의 「다가오는 기념일」 목록에서 확인하세요.
+          </Text>
+        </HandDrawnCard>
+      </View>
+
+      <View style={styles.section}>
+        <HandDrawnCard>
+          <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             데이터 백업/복원
           </Text>
           <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.backupDescription]}>
@@ -454,6 +476,10 @@ const styles = StyleSheet.create({
   },
   backupDescription: {
     marginBottom: SPACING.rowGap,
+    fontSize: FONT.bodySmall,
+  },
+  infoDescription: {
+    marginBottom: 0,
     fontSize: FONT.bodySmall,
   },
   backupButtons: {

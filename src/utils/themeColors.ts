@@ -26,7 +26,10 @@ export const HAND_DRAWN_LIGHT = {
   cardBg: '#ffffff',
 } as const;
 
-/** Hand-Drawn 다크 팔레트 (어두운 종이/스케치북 느낌) */
+/**
+ * Hand-Drawn 다크 팔레트 (어두운 종이/스케치북 느낌).
+ * foreground/mutedText는 배경 대비를 유지해 다크 모드 가독성을 확보함.
+ */
 export const HAND_DRAWN_DARK = {
   background: '#1a1916',
   foreground: '#e8e4dc',

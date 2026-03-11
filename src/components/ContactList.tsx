@@ -69,6 +69,8 @@ const ContactList: React.FC = () => {
       contactRow: { borderBottomColor: borderLight },
       phone: { color: colorMuted, fontFamily: FONT.fontFamilyBody },
       contactName: { color, fontFamily: FONT.fontFamilyBody },
+      groupChipBorder: { borderColor: borderLight },
+      groupChipText: { color, fontFamily: FONT.fontFamilyBody },
     }),
     [borderLight, colorMuted, color],
   );
@@ -265,6 +267,7 @@ const ContactList: React.FC = () => {
           <Pressable
             style={[
               styles.groupChip,
+              themeStyles.groupChipBorder,
               !groupFilter && { backgroundColor: accent, borderColor: accent },
             ]}
             onPress={() => setGroupFilter('')}
@@ -272,6 +275,7 @@ const ContactList: React.FC = () => {
             <Text
               style={[
                 styles.groupChipText,
+                themeStyles.groupChipText,
                 !groupFilter && styles.groupChipTextActive,
               ]}
             >
@@ -283,6 +287,7 @@ const ContactList: React.FC = () => {
               key={value}
               style={[
                 styles.groupChip,
+                themeStyles.groupChipBorder,
                 groupFilter === value && {
                   backgroundColor: accent,
                   borderColor: accent,
@@ -293,6 +298,7 @@ const ContactList: React.FC = () => {
               <Text
                 style={[
                   styles.groupChipText,
+                  themeStyles.groupChipText,
                   groupFilter === value && styles.groupChipTextActive,
                 ]}
               >
@@ -400,7 +406,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ccc',
   },
   groupChipText: {
     fontSize: FONT.bodySmall,

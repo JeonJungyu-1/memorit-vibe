@@ -108,6 +108,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       contactRow: { borderBottomColor: borderLight },
       contactName: { color },
       phone: { color: colorMuted },
+      groupChipBorder: { borderColor: borderLight },
+      groupChipText: { color },
     }),
     [accent, color, colorMuted, borderLight, borderLighter],
   );
@@ -367,6 +369,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Pressable
               style={[
                 styles.groupChip,
+                themeStyles.groupChipBorder,
                 !groupFilter && { backgroundColor: accent, borderColor: accent },
               ]}
               onPress={() => setGroupFilter('')}
@@ -374,6 +377,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               <Text
                 style={[
                   styles.groupChipText,
+                  themeStyles.groupChipText,
                   !groupFilter && styles.groupChipTextActive,
                 ]}
               >
@@ -385,6 +389,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 key={value}
                 style={[
                   styles.groupChip,
+                  themeStyles.groupChipBorder,
                   groupFilter === value && {
                     backgroundColor: accent,
                     borderColor: accent,
@@ -395,6 +400,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 <Text
                   style={[
                     styles.groupChipText,
+                    themeStyles.groupChipText,
                     groupFilter === value && styles.groupChipTextActive,
                   ]}
                 >
@@ -544,7 +550,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#ccc',
   },
   groupChipText: {
     fontSize: FONT.bodySmall,
