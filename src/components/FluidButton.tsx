@@ -10,10 +10,10 @@ import {
 import { fluidLedgerLight, fluidLedgerDark } from '../theme/fluidLedgerTokens';
 import { useThemeMode } from '../contexts/ThemeContext';
 
-export type HandDrawnButtonVariant = 'primary' | 'secondary';
+export type FluidButtonVariant = 'primary' | 'secondary';
 
-export type HandDrawnButtonProps = {
-  variant?: HandDrawnButtonVariant;
+export type FluidButtonProps = {
+  variant?: FluidButtonVariant;
   onPress?: () => void;
   children: React.ReactNode;
   disabled?: boolean;
@@ -23,13 +23,13 @@ export type HandDrawnButtonProps = {
 /**
  * Fluid Ledger 스타일 버튼 (라운드·Manrope).
  */
-export function HandDrawnButton({
+export function FluidButton({
   variant = 'primary',
   onPress,
   children,
   disabled = false,
   style,
-}: HandDrawnButtonProps): React.ReactElement {
+}: FluidButtonProps): React.ReactElement {
   const theme = useTheme();
   const { resolvedTheme } = useThemeMode();
   const isDark = resolvedTheme === 'dark';

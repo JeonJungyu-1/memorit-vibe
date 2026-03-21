@@ -15,11 +15,11 @@ import {
   FLUID_DARK,
 } from '../utils/themeColors';
 
-export type HandDrawnCardDecoration = 'tape' | 'tack' | 'none';
+export type FluidCardDecoration = 'tape' | 'tack' | 'none';
 
-export type HandDrawnCardProps = ViewProps & {
+export type FluidCardProps = ViewProps & {
   children: React.ReactNode;
-  decoration?: HandDrawnCardDecoration;
+  decoration?: FluidCardDecoration;
   postIt?: boolean;
   style?: ViewStyle;
 };
@@ -27,13 +27,13 @@ export type HandDrawnCardProps = ViewProps & {
 /**
  * Fluid Ledger 카드 — 톤 분리·은은한 그림자 (테이프/압정 데코는 비활성 권장).
  */
-export function HandDrawnCard({
+export function FluidCard({
   children,
   decoration = 'none',
   postIt = false,
   style,
   ...rest
-}: HandDrawnCardProps): React.ReactElement {
+}: FluidCardProps): React.ReactElement {
   const theme = useTheme();
   const { resolvedTheme } = useThemeMode();
   const isDark = resolvedTheme === 'dark';

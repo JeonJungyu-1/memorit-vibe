@@ -34,9 +34,9 @@ import {
 import { cancelEventNotification } from '../services/notificationService';
 import { getEventDisplayText } from '../constants/eventTypes';
 import { getThemeColor, SPACING, FONT, RADIUS_SM, FLUID_LIGHT } from '../utils/themeColors';
-import { HandDrawnButton } from '../components/HandDrawnButton';
-import { HandDrawnCard } from '../components/HandDrawnCard';
-import { HandDrawnInput } from '../components/HandDrawnInput';
+import { FluidButton } from '../components/FluidButton';
+import { FluidCard } from '../components/FluidCard';
+import { FluidInput } from '../components/FluidInput';
 
 LocaleConfig.locales.ko = {
   monthNames: ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'],
@@ -288,7 +288,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderListHeader = () =>
     upcomingEvents.length > 0 ? (
-      <HandDrawnCard decoration="none" style={styles.upcomingCardWrap}>
+      <FluidCard decoration="none" style={styles.upcomingCardWrap}>
         <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
           다가오는 기념일
         </Text>
@@ -314,7 +314,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             ) : null}
           </Pressable>
         ))}
-      </HandDrawnCard>
+      </FluidCard>
     ) : null;
 
   return (
@@ -322,45 +322,45 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       <View style={styles.headerRow}>
         <Text style={[styles.header, { color }]}>Memorit</Text>
         <View style={styles.headerButtons}>
-          <HandDrawnButton variant="secondary" onPress={handleOpenHelper}>
+          <FluidButton variant="secondary" onPress={handleOpenHelper}>
             도우미
-          </HandDrawnButton>
-          <HandDrawnButton variant="secondary" onPress={handleOpenStatistics}>
+          </FluidButton>
+          <FluidButton variant="secondary" onPress={handleOpenStatistics}>
             통계
-          </HandDrawnButton>
-          <HandDrawnButton variant="secondary" onPress={handleOpenSettings}>
+          </FluidButton>
+          <FluidButton variant="secondary" onPress={handleOpenSettings}>
             설정
-          </HandDrawnButton>
+          </FluidButton>
         </View>
       </View>
       <Text style={[styles.summary, themeStyles.summary]}>{contacts.length}명의 연락처</Text>
 
       <View style={styles.reselectButtonWrap}>
-        <HandDrawnButton variant="primary" onPress={handleReselectContacts}>
+        <FluidButton variant="primary" onPress={handleReselectContacts}>
           연락처 다시 선택
-        </HandDrawnButton>
+        </FluidButton>
       </View>
 
       <View style={styles.viewToggleRow}>
-        <HandDrawnButton
+        <FluidButton
           variant={viewMode === 'list' ? 'primary' : 'secondary'}
           onPress={() => setViewMode('list')}
           style={styles.viewToggleButton}
         >
           목록
-        </HandDrawnButton>
-        <HandDrawnButton
+        </FluidButton>
+        <FluidButton
           variant={viewMode === 'calendar' ? 'primary' : 'secondary'}
           onPress={() => setViewMode('calendar')}
           style={styles.viewToggleButton}
         >
           캘린더
-        </HandDrawnButton>
+        </FluidButton>
       </View>
 
       {viewMode === 'list' ? (
         <>
-          <HandDrawnInput
+          <FluidInput
             placeholder="이름 또는 번호로 검색"
             value={searchQuery}
             onChangeText={setSearchQuery}
@@ -444,7 +444,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </>
       ) : (
         <ScrollView style={styles.calendarScroll} showsVerticalScrollIndicator={false}>
-          <HandDrawnCard decoration="none" style={styles.calendarCard}>
+          <FluidCard decoration="none" style={styles.calendarCard}>
             <Calendar
               current={calendarCurrent}
               onDayPress={(day) => setSelectedCalendarDate(day.dateString)}
@@ -460,8 +460,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                 </Text>
               )}
             />
-          </HandDrawnCard>
-          <HandDrawnCard style={styles.calendarDayCard}>
+          </FluidCard>
+          <FluidCard style={styles.calendarDayCard}>
             <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
               {selectedCalendarDate
                 ? '선택한 날짜 일정'
@@ -500,7 +500,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                   해당 날짜에 일정이 없습니다.
                 </Text>
               ))}
-          </HandDrawnCard>
+          </FluidCard>
         </ScrollView>
       )}
     </Container>

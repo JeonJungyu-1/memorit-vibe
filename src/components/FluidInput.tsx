@@ -13,7 +13,7 @@ import {
   SPACING,
 } from '../utils/themeColors';
 
-export type HandDrawnInputProps = Omit<
+export type FluidInputProps = Omit<
   TextInputProps,
   'style'
 > & {
@@ -24,14 +24,14 @@ export type HandDrawnInputProps = Omit<
 /**
  * Fluid Ledger 입력 — 배경 톤·포커스 시 세컨더리 링.
  */
-export function HandDrawnInput({
+export function FluidInput({
   style,
   inputStyle,
   placeholderTextColor,
   onFocus,
   onBlur,
   ...rest
-}: HandDrawnInputProps): React.ReactElement {
+}: FluidInputProps): React.ReactElement {
   const theme = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 

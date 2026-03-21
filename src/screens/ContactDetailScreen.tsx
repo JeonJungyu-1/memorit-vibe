@@ -58,9 +58,9 @@ import {
   getContactGroupLabel,
   getContactGroupEmoji,
 } from '../constants/contactGroups';
-import { HandDrawnButton } from '../components/HandDrawnButton';
-import { HandDrawnCard } from '../components/HandDrawnCard';
-import { HandDrawnInput } from '../components/HandDrawnInput';
+import { FluidButton } from '../components/FluidButton';
+import { FluidCard } from '../components/FluidCard';
+import { FluidInput } from '../components/FluidInput';
 
 type SavedContact = SavedContactRow;
 
@@ -214,9 +214,9 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
     return (
       <View style={[styles.screenRoot, { backgroundColor: screenBg }]}>
         <View style={styles.backButtonWrap}>
-          <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
+          <FluidButton variant="secondary" onPress={() => navigation.goBack()}>
             ← 뒤로
-          </HandDrawnButton>
+          </FluidButton>
         </View>
         <Text style={[styles.errorText, themeStyles.errorText]}>연락처를 찾을 수 없습니다.</Text>
       </View>
@@ -226,21 +226,21 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   return (
     <View style={[styles.screenRoot, { backgroundColor: screenBg }]}>
       <View style={styles.backButtonWrap}>
-        <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
+        <FluidButton variant="secondary" onPress={() => navigation.goBack()}>
           ← 뒤로
-        </HandDrawnButton>
+        </FluidButton>
       </View>
 
-      <HandDrawnCard style={styles.headerCard}>
+      <FluidCard style={styles.headerCard}>
         <View style={styles.headerTitleRow}>
           <Text style={[styles.name, themeStyles.name]}>{contact.displayName || '이름 없음'}</Text>
-          <HandDrawnButton
+          <FluidButton
             variant="secondary"
             onPress={() => setShowEditProfile(true)}
             style={styles.editProfileButton}
           >
             프로필 수정
-          </HandDrawnButton>
+          </FluidButton>
         </View>
         {(contact.group ?? '').trim() ? (
           <Text style={[styles.groupBadge, { color: accent }]}>
@@ -269,14 +269,14 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
         {(contact.memo ?? '').trim() ? (
           <Text style={[styles.profileField, themeStyles.phoneHint]}>메모: {contact.memo}</Text>
         ) : null}
-      </HandDrawnCard>
+      </FluidCard>
 
       <View style={styles.eventsSection}>
         <View style={styles.eventsSectionHeader}>
           <Text style={[styles.eventsSectionTitle, themeStyles.sectionTitle]}>기념일</Text>
-          <HandDrawnButton variant="primary" onPress={handleAddEvent}>
+          <FluidButton variant="primary" onPress={handleAddEvent}>
             기념일 추가
-          </HandDrawnButton>
+          </FluidButton>
         </View>
         {(() => {
           const totalExpense = events.reduce(
@@ -612,7 +612,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               />
             </View>
             <Text style={[modalStyles.label, modalThemeStyles.label]}>메모 (선택)</Text>
-            <HandDrawnInput
+            <FluidInput
               value={memo}
               onChangeText={setMemo}
               placeholder="메모"
@@ -621,7 +621,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               style={modalStyles.inputSpacer}
             />
             <Text style={[modalStyles.label, modalThemeStyles.label]}>주년 수 (선택, 숫자만)</Text>
-            <HandDrawnInput
+            <FluidInput
               value={amount}
               onChangeText={setAmount}
               placeholder="0"
@@ -629,7 +629,7 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
               style={modalStyles.inputSpacer}
             />
             <Text style={[modalStyles.label, modalThemeStyles.label]}>경조사비 (원)</Text>
-            <HandDrawnInput
+            <FluidInput
               value={expenseAmount}
               onChangeText={setExpenseAmount}
               placeholder="0"
@@ -638,12 +638,12 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
             />
           </ScrollView>
           <View style={modalStyles.actions}>
-            <HandDrawnButton variant="secondary" onPress={onClose}>
+            <FluidButton variant="secondary" onPress={onClose}>
               취소
-            </HandDrawnButton>
-            <HandDrawnButton variant="primary" onPress={handleSave} disabled={saving}>
+            </FluidButton>
+            <FluidButton variant="primary" onPress={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장'}
-            </HandDrawnButton>
+            </FluidButton>
           </View>
         </Pressable>
       </Pressable>
@@ -735,14 +735,14 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
           <Text style={[modalStyles.title, modalThemeStyles.title]}>프로필 수정</Text>
           <ScrollView keyboardShouldPersistTaps="handled">
             <Text style={[modalStyles.label, modalThemeStyles.label]}>이름</Text>
-            <HandDrawnInput
+            <FluidInput
               value={displayName}
               onChangeText={setDisplayName}
               placeholder="이름"
               style={modalStyles.inputSpacer}
             />
             <Text style={[modalStyles.label, modalThemeStyles.label]}>전화번호</Text>
-            <HandDrawnInput
+            <FluidInput
               value={phoneNumber}
               onChangeText={setPhoneNumber}
               placeholder="전화번호"
@@ -774,21 +774,21 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
               ))}
             </View>
             <Text style={[modalStyles.label, modalThemeStyles.label]}>관계 (선택)</Text>
-            <HandDrawnInput
+            <FluidInput
               value={relationship}
               onChangeText={setRelationship}
               placeholder="예: 친구, 직장 동료"
               style={modalStyles.inputSpacer}
             />
             <Text style={[modalStyles.label, modalThemeStyles.label]}>주소 (선택)</Text>
-            <HandDrawnInput
+            <FluidInput
               value={address}
               onChangeText={setAddress}
               placeholder="주소"
               style={modalStyles.inputSpacer}
             />
             <Text style={[modalStyles.label, modalThemeStyles.label]}>메모 (선택)</Text>
-            <HandDrawnInput
+            <FluidInput
               value={memo}
               onChangeText={setMemo}
               placeholder="메모"
@@ -798,12 +798,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
             />
           </ScrollView>
           <View style={modalStyles.actions}>
-            <HandDrawnButton variant="secondary" onPress={onClose}>
+            <FluidButton variant="secondary" onPress={onClose}>
               취소
-            </HandDrawnButton>
-            <HandDrawnButton variant="primary" onPress={handleSave} disabled={saving}>
+            </FluidButton>
+            <FluidButton variant="primary" onPress={handleSave} disabled={saving}>
               {saving ? '저장 중…' : '저장'}
-            </HandDrawnButton>
+            </FluidButton>
           </View>
         </Pressable>
       </Pressable>

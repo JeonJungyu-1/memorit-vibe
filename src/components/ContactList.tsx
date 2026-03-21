@@ -29,8 +29,8 @@ import {
   getContactGroupEmoji,
 } from '../constants/contactGroups';
 import { getThemeColor, SPACING, FONT, RADIUS_SM, FLUID_LIGHT } from '../utils/themeColors';
-import { HandDrawnButton } from './HandDrawnButton';
-import { HandDrawnInput } from './HandDrawnInput';
+import { FluidButton } from './FluidButton';
+import { FluidInput } from './FluidInput';
 
 type ContactListNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -234,30 +234,30 @@ const ContactList: React.FC = () => {
 
       {mode === 'select' ? (
         <View style={styles.selectBar}>
-          <HandDrawnButton variant="secondary" onPress={selectAll}>
+          <FluidButton variant="secondary" onPress={selectAll}>
             전체 선택
-          </HandDrawnButton>
-          <HandDrawnButton variant="secondary" onPress={clearSelection}>
+          </FluidButton>
+          <FluidButton variant="secondary" onPress={clearSelection}>
             선택 해제
-          </HandDrawnButton>
-          <HandDrawnButton
+          </FluidButton>
+          <FluidButton
             variant="primary"
             onPress={importSelected}
             disabled={selectedCount === 0}
             style={selectedCount === 0 ? styles.buttonDisabled : undefined}
           >
             가져오기 ({selectedCount})
-          </HandDrawnButton>
+          </FluidButton>
         </View>
       ) : (
         <View style={styles.selectBar}>
-          <HandDrawnButton variant="primary" onPress={() => setMode('select')}>
+          <FluidButton variant="primary" onPress={() => setMode('select')}>
             다시 선택
-          </HandDrawnButton>
+          </FluidButton>
         </View>
       )}
 
-      <HandDrawnInput
+      <FluidInput
         placeholder="이름 또는 번호로 검색"
         placeholderTextColor={placeholderColor}
         value={searchQuery}
@@ -370,11 +370,11 @@ const Container = styled(YStack, {
 });
 
 function Checkbox({ children, style }: { children: React.ReactNode; style?: ViewStyle }) {
-  return <View style={[styles.checkboxWobbly, style]}>{children}</View>;
+  return <View style={[styles.checkboxCell, style]}>{children}</View>;
 }
 
 const styles = StyleSheet.create({
-  checkboxWobbly: {
+  checkboxCell: {
     width: 28,
     height: 28,
     borderWidth: 2,

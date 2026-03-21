@@ -19,8 +19,8 @@ import {
 } from '../db/Database';
 import { getEventDisplayText } from '../constants/eventTypes';
 import { getThemeColor, SPACING, FONT, FLUID_LIGHT } from '../utils/themeColors';
-import { HandDrawnButton } from '../components/HandDrawnButton';
-import { HandDrawnCard } from '../components/HandDrawnCard';
+import { FluidButton } from '../components/FluidButton';
+import { FluidCard } from '../components/FluidCard';
 
 const UPCOMING_FORECAST_MONTHS = 6;
 
@@ -99,9 +99,9 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.headerRow}>
-        <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
+        <FluidButton variant="secondary" onPress={() => navigation.goBack()}>
           ← 뒤로
-        </HandDrawnButton>
+        </FluidButton>
         <Text style={[styles.title, { color }]}>통계 · 분석</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -114,7 +114,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
         }
       >
         {/* 다가오는 지출 예측 */}
-        <HandDrawnCard style={styles.card}>
+        <FluidCard style={styles.card}>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             다가오는 지출 예측
           </Text>
@@ -124,10 +124,10 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
           <Text style={[styles.caption, themeStyles.rowLabel]}>
             향후 {UPCOMING_FORECAST_MONTHS}개월 내 예정된 경조사 비용 합계
           </Text>
-        </HandDrawnCard>
+        </FluidCard>
 
         {/* 연도·월별 지출 요약 */}
-        <HandDrawnCard style={styles.card}>
+        <FluidCard style={styles.card}>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             연도·월별 지출 요약
           </Text>
@@ -155,10 +155,10 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
               </View>
             ))
           )}
-        </HandDrawnCard>
+        </FluidCard>
 
         {/* 유형별 통계 */}
-        <HandDrawnCard style={styles.card}>
+        <FluidCard style={styles.card}>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             유형별 통계
           </Text>
@@ -186,7 +186,7 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
               </View>
             ))
           )}
-        </HandDrawnCard>
+        </FluidCard>
       </ScrollView>
     </View>
   );

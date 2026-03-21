@@ -24,8 +24,8 @@ import {
   type ChecklistTemplate,
 } from '../constants/checklistTemplates';
 import { getThemeColor, SPACING, FONT, RADIUS_SM, FLUID_LIGHT } from '../utils/themeColors';
-import { HandDrawnButton } from '../components/HandDrawnButton';
-import { HandDrawnCard } from '../components/HandDrawnCard';
+import { FluidButton } from '../components/FluidButton';
+import { FluidCard } from '../components/FluidCard';
 
 type HelperTab = 'condolence' | 'checklist';
 
@@ -78,9 +78,9 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <View style={styles.headerRow}>
-        <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
+        <FluidButton variant="secondary" onPress={() => navigation.goBack()}>
           ← 뒤로
-        </HandDrawnButton>
+        </FluidButton>
         <Text style={[styles.title, { color }]}>경조사 도우미</Text>
         <View style={styles.headerSpacer} />
       </View>
@@ -152,7 +152,7 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
                 </Pressable>
               ))}
             </View>
-            <HandDrawnCard style={styles.card}>
+            <FluidCard style={styles.card}>
               <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
                 관계별 참고 금액
               </Text>
@@ -167,7 +167,7 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
                   ) : null}
                 </View>
               ))}
-            </HandDrawnCard>
+            </FluidCard>
           </>
         )}
 
@@ -195,7 +195,7 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
                 </Pressable>
               ))}
             </View>
-            <HandDrawnCard style={styles.card}>
+            <FluidCard style={styles.card}>
               <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
                 {currentChecklist.title}
               </Text>
@@ -212,7 +212,7 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
                   <Text style={[styles.checklistText, themeStyles.body]}>{item.text}</Text>
                 </View>
               ))}
-            </HandDrawnCard>
+            </FluidCard>
           </>
         )}
       </ScrollView>

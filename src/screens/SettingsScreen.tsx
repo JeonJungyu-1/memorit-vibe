@@ -48,9 +48,9 @@ import {
   getMonthlyBudgetGoalKrw,
   setMonthlyBudgetGoalKrw,
 } from '../utils/budgetSettings';
-import { HandDrawnButton } from '../components/HandDrawnButton';
-import { HandDrawnCard } from '../components/HandDrawnCard';
-import { HandDrawnInput } from '../components/HandDrawnInput';
+import { FluidButton } from '../components/FluidButton';
+import { FluidCard } from '../components/FluidCard';
+import { FluidInput } from '../components/FluidInput';
 
 const DAYS_OPTIONS = [
   { value: 0, label: '당일' },
@@ -351,15 +351,15 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   return (
     <View style={[styles.container, themeStyles.container]}>
       <View style={styles.backButton}>
-        <HandDrawnButton variant="secondary" onPress={() => navigation.navigate('LedgerHome')}>
+        <FluidButton variant="secondary" onPress={() => navigation.navigate('LedgerHome')}>
           ← 대시보드
-        </HandDrawnButton>
+        </FluidButton>
       </View>
 
       <Text style={[styles.title, themeStyles.title]}>설정</Text>
 
       <View style={styles.section}>
-        <HandDrawnCard>
+        <FluidCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>테마</Text>
           <View style={styles.themeChips}>
             {THEME_OPTIONS.map(({ value, label }) => (
@@ -382,30 +382,30 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </Pressable>
             ))}
           </View>
-        </HandDrawnCard>
+        </FluidCard>
       </View>
 
       <View style={styles.section}>
-        <HandDrawnCard>
+        <FluidCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>월간 예산 (대시보드)</Text>
           <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.budgetHint]}>
             이번 달 경조사비 목표(원). 비우고 저장하면 미사용.
           </Text>
-          <HandDrawnInput
+          <FluidInput
             value={monthlyBudgetInput}
             onChangeText={setMonthlyBudgetInput}
             placeholder="예: 5000000"
             keyboardType="number-pad"
             style={styles.budgetInput}
           />
-          <HandDrawnButton variant="primary" onPress={handleSaveBudget}>
+          <FluidButton variant="primary" onPress={handleSaveBudget}>
             예산 목표 저장
-          </HandDrawnButton>
-        </HandDrawnCard>
+          </FluidButton>
+        </FluidCard>
       </View>
 
       <View style={styles.section}>
-        <HandDrawnCard>
+        <FluidCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>기념일 알림</Text>
           <View style={styles.row}>
             <Text style={[styles.rowLabel, themeStyles.rowLabel]}>알림 사용</Text>
@@ -460,33 +460,33 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               onTouchCancel={() => setShowTimePicker(false)}
             />
           )}
-        </HandDrawnCard>
+        </FluidCard>
       </View>
 
       <View style={styles.section}>
-        <HandDrawnCard>
+        <FluidCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             오프라인 사용
           </Text>
           <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.infoDescription]}>
             모든 연락처와 경조사 데이터는 기기에만 저장됩니다. 인터넷 연결 없이 앱을 사용할 수 있습니다.
           </Text>
-        </HandDrawnCard>
+        </FluidCard>
       </View>
 
       <View style={styles.section}>
-        <HandDrawnCard>
+        <FluidCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             홈 화면 위젯
           </Text>
           <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.infoDescription]}>
             iOS/Android 홈 화면 위젯은 현재 버전에서 지원하지 않습니다. 다가오는 경조사는 앱 홈의 「다가오는 기념일」 목록에서 확인하세요.
           </Text>
-        </HandDrawnCard>
+        </FluidCard>
       </View>
 
       <View style={styles.section}>
-        <HandDrawnCard>
+        <FluidCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             자동 백업
           </Text>
@@ -531,11 +531,11 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </View>
             </View>
           )}
-        </HandDrawnCard>
+        </FluidCard>
       </View>
 
       <View style={styles.section}>
-        <HandDrawnCard>
+        <FluidCard>
           <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>
             데이터 백업/복원
           </Text>
@@ -543,32 +543,32 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
             기기 변경 또는 앱 재설치 시 백업 파일로 데이터를 복원할 수 있습니다.
           </Text>
           <View style={styles.backupButtons}>
-            <HandDrawnButton
+            <FluidButton
               variant="primary"
               onPress={handleExportBackup}
               disabled={backupRestoreBusy}
               style={styles.backupButton}
             >
               백업하여 공유
-            </HandDrawnButton>
-            <HandDrawnButton
+            </FluidButton>
+            <FluidButton
               variant="secondary"
               onPress={handleExportCsv}
               disabled={backupRestoreBusy}
               style={styles.backupButton}
             >
               CSV로 내보내기
-            </HandDrawnButton>
-            <HandDrawnButton
+            </FluidButton>
+            <FluidButton
               variant="secondary"
               onPress={handleRestoreBackup}
               disabled={backupRestoreBusy}
               style={styles.backupButton}
             >
               백업 파일에서 복원
-            </HandDrawnButton>
+            </FluidButton>
           </View>
-        </HandDrawnCard>
+        </FluidCard>
       </View>
     </View>
   );
