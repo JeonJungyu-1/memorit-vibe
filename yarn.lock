@@ -1244,6 +1244,11 @@
   resolved "https://registry.yarnpkg.com/@expo-google-fonts/kalam/-/kalam-0.4.1.tgz#6d94015ec98229933c518231920d8af4be4a96d8"
   integrity sha512-A5LZoojqb9OCzOI/2WDRofaIQGGzC5zzmKxqxCFIx1jSYOO8g7q+5fZdd+QfJ6pY6VLzO4j5xoJq0ptcHFpQSg==
 
+"@expo-google-fonts/manrope@^0.4.2":
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/@expo-google-fonts/manrope/-/manrope-0.4.2.tgz#d681e9701eb8df840bcfe893f41008d4d8b00778"
+  integrity sha512-BZsKe8d9BJrVnIQIZcTS7/Kac0TbXnqs/+8EBSiQxrmK6GoCO6eTkmr50D1weIk/EoF20pTmAkpWICnovATr/g==
+
 "@expo-google-fonts/nunito@^0.4.2":
   version "0.4.2"
   resolved "https://registry.yarnpkg.com/@expo-google-fonts/nunito/-/nunito-0.4.2.tgz#9ce15e924dc7fc29a2257afb7f78a3f0e7d0d39f"
@@ -2408,6 +2413,15 @@
     invariant "^2.2.4"
     nullthrows "^1.1.1"
 
+"@react-navigation/bottom-tabs@^7.15.6":
+  version "7.15.6"
+  resolved "https://registry.yarnpkg.com/@react-navigation/bottom-tabs/-/bottom-tabs-7.15.6.tgz#e1a86a7128b11ff037ff5e07b4b294e42a2cc1aa"
+  integrity sha512-olB+s0ApMzWN9t5Bk5Mj6ntSlVRz3B8v+1LtwGS/29lyC311G5es0kgxyzpGKE9gy6Ef8W526QH5cIka2jh0kQ==
+  dependencies:
+    "@react-navigation/elements" "^2.9.11"
+    color "^4.2.3"
+    sf-symbols-typescript "^2.1.0"
+
 "@react-navigation/core@^7.16.1":
   version "7.16.1"
   resolved "https://registry.yarnpkg.com/@react-navigation/core/-/core-7.16.1.tgz#a8f6799a7b18f6d5c45616cbf792ec8f08d1aadc"
@@ -2426,6 +2440,15 @@
   version "2.9.10"
   resolved "https://registry.yarnpkg.com/@react-navigation/elements/-/elements-2.9.10.tgz#8cde92a7b4d088a46efb931e6edb2644eddd630c"
   integrity sha512-N8tuBekzTRb0pkMHFJGvmC6Q5OisSbt6gzvw7RHMnp4NDo5auVllT12sWFaTXf8mTduaLKNSrD/NZNaOqThCBg==
+  dependencies:
+    color "^4.2.3"
+    use-latest-callback "^0.2.4"
+    use-sync-external-store "^1.5.0"
+
+"@react-navigation/elements@^2.9.11":
+  version "2.9.11"
+  resolved "https://registry.yarnpkg.com/@react-navigation/elements/-/elements-2.9.11.tgz#7be3cdf1adb9e65f38bf8a3d91460181f7c042f3"
+  integrity sha512-O5KiwaVCcEVuqZgQ77xiBFSl1sha77rNMTFlLWYnom33ZHPDarV3bM9WNyVnMZxU8ZVTi02X3+ZhO0fSn5QYyg==
   dependencies:
     color "^4.2.3"
     use-latest-callback "^0.2.4"
