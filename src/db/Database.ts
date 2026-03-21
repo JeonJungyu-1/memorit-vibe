@@ -406,6 +406,92 @@ export const getExpenseSummaryByType = async (
   }
 };
 
+/** 대시보드 이벤트 카드용: 연락처명·유형·지출 포함, 날짜 내림차순 */
+export type LedgerEventRow = {
+  id: number;
+  contactId: string;
+  displayName: string;
+  type: string;
+  memo: string;
+  date: string;
+  expenseAmount: number;
+};
+
+export const getRecentLedgerEvents = async (
+  db: any,
+  limit: number,
+): Promise<LedgerEventRow[]> => {
+  try {
+    const [results] = await db.executeSql(
+      `SELECT e.id, e.contactId, e.type, e.memo, e.date,
+              COALESCE(e.expense_amount, 0) as expenseAmount,
+              COALESCE(c.displayName, '') as displayName
+       FROM events e
+       LEFT JOIN contacts c ON c.contactId = e.contactId
+       WHERE e.date IS NOT NULL AND e.date != ''
+       ORDER BY e.date DESC, e.id DESC
+       LIMIT ?;`,
+      [limit],
+    );
+    const rows: LedgerEventRow[] = [];
+    const rowCount = results?.rows?.length ?? 0;
+    for (let i = 0; i < rowCount; i++) {
+      const item = results.rows.item(i);
+      rows.push({
+        id: Number(item.id),
+        contactId: String(item.contactId ?? ''),
+        displayName: String(item.displayName ?? ''),
+        type: String(item.type ?? 'other'),
+        memo: String(item.memo ?? ''),
+        date: String(item.date ?? ''),
+        expenseAmount: Number(item.expenseAmount) || 0,
+      });
+    }
+    return rows;
+  } catch (e) {
+    console.warn('getRecentLedgerEvents failed', e);
+    return [];
+  }
+};
+
+/** 기간 내 지출 합계 (YYYY-MM-DD 닫힌 구간) */
+export const getTotalExpenseInDateRange = async (
+  db: any,
+  startDate: string,
+  endDate: string,
+): Promise<number> => {
+  try {
+    const [results] = await db.executeSql(
+      `SELECT COALESCE(SUM(expense_amount), 0) as total
+       FROM events
+       WHERE date >= ? AND date <= ?;`,
+      [startDate, endDate],
+    );
+    if (results?.rows?.length > 0) {
+      return Number(results.rows.item(0).total) || 0;
+    }
+    return 0;
+  } catch (e) {
+    console.warn('getTotalExpenseInDateRange failed', e);
+    return 0;
+  }
+};
+
+export const getTotalEventCount = async (db: any): Promise<number> => {
+  try {
+    const [results] = await db.executeSql(
+      'SELECT COUNT(*) as c FROM events;',
+    );
+    if (results?.rows?.length > 0) {
+      return Number(results.rows.item(0).c) || 0;
+    }
+    return 0;
+  } catch (e) {
+    console.warn('getTotalEventCount failed', e);
+    return 0;
+  }
+};
+
 /** N개월 내 예정 이벤트의 지출 합계 (다가오는 지출 예측) */
 export const getUpcomingExpenseForecast = async (
   db: any,
