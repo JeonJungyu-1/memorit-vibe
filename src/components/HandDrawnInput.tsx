@@ -8,7 +8,7 @@ import {
 import { useTheme } from 'tamagui';
 import {
   getThemeColor,
-  WOBBLY_SM,
+  RADIUS_MD,
   FONT,
   SPACING,
 } from '../utils/themeColors';
@@ -17,16 +17,12 @@ export type HandDrawnInputProps = Omit<
   TextInputProps,
   'style'
 > & {
-  /** 컨테이너/입력창에 적용할 스타일 */
   style?: ViewStyle;
-  /** 입력창 내부 텍스트/플레이스홀더 스타일 (fontFamily 등은 기본 적용) */
   inputStyle?: TextInputProps['style'];
 };
 
 /**
- * Hand-Drawn 스타일 입력 필드.
- * - wobbly border radius, 2px 테두리, Patrick Hand 폰트.
- * - placeholder 색: muted, focus 시 테두리/링을 secondaryAccent(파란 볼펜)로 강조.
+ * Fluid Ledger 입력 — 배경 톤·포커스 시 세컨더리 링.
  */
 export function HandDrawnInput({
   style,
@@ -39,13 +35,11 @@ export function HandDrawnInput({
   const theme = useTheme();
   const [isFocused, setIsFocused] = useState(false);
 
-  const borderColor = getThemeColor(theme, 'borderColor') || '#2d2d2d';
-  const muted = getThemeColor(theme, 'gray4') || getThemeColor(theme, 'color11') || '#e5e0d8';
   const placeholderColorFromTheme =
-    getThemeColor(theme, 'placeholderColor') || getThemeColor(theme, 'color11') || '#6b6560';
-  const secondaryAccent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || '#2d5da1';
-  const foreground = getThemeColor(theme, 'color') || '#2d2d2d';
-  const cardBg = getThemeColor(theme, 'backgroundHover') ?? '#ffffff';
+    getThemeColor(theme, 'placeholderColor') || getThemeColor(theme, 'color11') || '#595c5d';
+  const secondaryAccent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || '#4052b6';
+  const foreground = getThemeColor(theme, 'color') || '#2c2f30';
+  const surfaceHi = getThemeColor(theme, 'gray3') || '#dadddf';
 
   const handleFocus = useCallback(
     (e: Parameters<NonNullable<TextInputProps['onFocus']>>[0]) => {
@@ -63,21 +57,16 @@ export function HandDrawnInput({
     [onBlur],
   );
 
-  const focusRingColor = isFocused ? secondaryAccent : borderColor;
-  const focusRingStyle: ViewStyle = isFocused
-    ? { borderWidth: 2, borderColor: secondaryAccent }
-    : {};
-
   return (
     <TextInput
       style={[
         styles.input,
         {
-          backgroundColor: cardBg,
-          borderColor: focusRingColor,
+          backgroundColor: surfaceHi,
+          borderColor: isFocused ? secondaryAccent : 'transparent',
           color: foreground,
+          borderWidth: isFocused ? 2 : 0,
         },
-        focusRingStyle,
         inputStyle,
         style,
       ]}
@@ -91,12 +80,11 @@ export function HandDrawnInput({
 
 const styles = StyleSheet.create({
   input: {
-    ...WOBBLY_SM,
-    borderWidth: 2,
+    ...RADIUS_MD,
     paddingVertical: SPACING.itemGap,
-    paddingHorizontal: 12,
+    paddingHorizontal: 14,
     fontSize: FONT.body,
-    fontFamily: FONT.fontFamilyBody,
+    fontFamily: FONT.fontFamilyMedium,
     minHeight: SPACING.touchTargetMin,
   },
 });

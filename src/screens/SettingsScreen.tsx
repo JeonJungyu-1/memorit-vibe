@@ -36,9 +36,21 @@ import {
 } from '../utils/autoBackupSettings';
 import { useThemeMode } from '../contexts/ThemeContext';
 import type { ThemeMode } from '../utils/themeSettings';
-import { getThemeColor, SPACING, FONT, WOBBLY_SM, HARD_SHADOW, HAND_DRAWN_LIGHT } from '../utils/themeColors';
+import {
+  getThemeColor,
+  SPACING,
+  FONT,
+  RADIUS_SM,
+  SOFT_FLOAT_SHADOW,
+  FLUID_LIGHT,
+} from '../utils/themeColors';
+import {
+  getMonthlyBudgetGoalKrw,
+  setMonthlyBudgetGoalKrw,
+} from '../utils/budgetSettings';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
+import { HandDrawnInput } from '../components/HandDrawnInput';
 
 const DAYS_OPTIONS = [
   { value: 0, label: '당일' },
@@ -88,17 +100,14 @@ function createThemeStyles(t: ThemeColors) {
       fontFamily: FONT.fontFamilyBody,
     },
     chip: {
-      ...WOBBLY_SM,
+      ...RADIUS_SM,
       paddingVertical: 10,
       paddingHorizontal: 16,
-      borderWidth: 2,
-      borderColor: t.borderColor,
+      borderWidth: 0,
       backgroundColor: t.backgroundHover,
       minHeight: 40,
       justifyContent: 'center' as const,
-      shadowColor: t.borderColor,
-      ...HARD_SHADOW,
-      shadowOpacity: 1,
+      ...SOFT_FLOAT_SHADOW,
     },
     chipActive: { backgroundColor: t.accent, borderColor: t.accent },
     chipText: {
@@ -121,16 +130,17 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const [backupRestoreBusy, setBackupRestoreBusy] = useState(false);
   const [autoBackupEnabled, setAutoBackupEnabledState] = useState(false);
   const [autoBackupInterval, setAutoBackupIntervalState] = useState<AutoBackupInterval>('weekly');
+  const [monthlyBudgetInput, setMonthlyBudgetInput] = useState('');
 
   const themeStyles = useMemo(
     () =>
       createThemeStyles({
-        background: getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background,
-        color: getThemeColor(theme, 'color') || HAND_DRAWN_LIGHT.foreground,
-        colorMuted: getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || HAND_DRAWN_LIGHT.mutedText,
-        borderColor: getThemeColor(theme, 'borderColor') || HAND_DRAWN_LIGHT.border,
-        backgroundHover: getThemeColor(theme, 'backgroundHover') ?? HAND_DRAWN_LIGHT.cardBg,
-        accent: getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || HAND_DRAWN_LIGHT.secondaryAccent,
+        background: getThemeColor(theme, 'background') || FLUID_LIGHT.background,
+        color: getThemeColor(theme, 'color') || FLUID_LIGHT.foreground,
+        colorMuted: getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || FLUID_LIGHT.mutedText,
+        borderColor: getThemeColor(theme, 'borderColor') || FLUID_LIGHT.border,
+        backgroundHover: getThemeColor(theme, 'backgroundHover') ?? FLUID_LIGHT.cardBg,
+        accent: getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || FLUID_LIGHT.secondaryAccent,
         accentForeground: '#fff',
       }),
     [theme],
@@ -138,18 +148,21 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
 
   const loadSettings = useCallback(async () => {
     try {
-      const [enabled, days, time, autoBackupOn, autoBackupInt] = await Promise.all([
-        getNotificationsEnabled(),
-        getNotificationDaysBefore(),
-        getNotificationTime(),
-        getAutoBackupEnabled(),
-        getAutoBackupInterval(),
-      ]);
+      const [enabled, days, time, autoBackupOn, autoBackupInt, budgetGoal] =
+        await Promise.all([
+          getNotificationsEnabled(),
+          getNotificationDaysBefore(),
+          getNotificationTime(),
+          getAutoBackupEnabled(),
+          getAutoBackupInterval(),
+          getMonthlyBudgetGoalKrw(),
+        ]);
       setNotificationsEnabledState(enabled);
       setDaysBeforeState(days);
       setNotificationTimeState(time);
       setAutoBackupEnabledState(autoBackupOn);
       setAutoBackupIntervalState(autoBackupInt);
+      setMonthlyBudgetInput(budgetGoal > 0 ? String(budgetGoal) : '');
     } catch (e) {
       console.error('Failed to load settings', e);
     } finally {
@@ -284,7 +297,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
                 text1: '복원 완료',
                 text2: `연락처 ${contactsCount}명이 복원되었습니다.`,
               });
-              navigation.navigate('Home');
+              navigation.navigate('Contacts');
             } catch (e: unknown) {
               if (isDocumentPickerCancel(e)) return;
               const err = e as { message?: string };
@@ -303,9 +316,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     );
   }, [backupRestoreBusy, navigation]);
 
-  const accent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || HAND_DRAWN_LIGHT.secondaryAccent;
+  const accent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || FLUID_LIGHT.secondaryAccent;
 
-  const containerBg = getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
+  const containerBg = getThemeColor(theme, 'background') || FLUID_LIGHT.background;
+
+  const handleSaveBudget = useCallback(async () => {
+    const n = parseInt(monthlyBudgetInput.replace(/,/g, ''), 10);
+    if (monthlyBudgetInput.trim() === '') {
+      await setMonthlyBudgetGoalKrw(0);
+      setMonthlyBudgetInput('');
+      Toast.show({ type: 'success', text1: '저장됨', text2: '월간 예산 목표를 해제했습니다.' });
+      return;
+    }
+    if (!Number.isFinite(n) || n < 0) {
+      Toast.show({ type: 'error', text1: '입력 오류', text2: '0 이상의 숫자를 입력해주세요.' });
+      return;
+    }
+    await setMonthlyBudgetGoalKrw(n);
+    Toast.show({ type: 'success', text1: '저장됨', text2: '대시보드 예산 카드에 반영됩니다.' });
+  }, [monthlyBudgetInput]);
 
   if (loading) {
     return (
@@ -322,8 +351,8 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   return (
     <View style={[styles.container, themeStyles.container]}>
       <View style={styles.backButton}>
-        <HandDrawnButton variant="secondary" onPress={() => navigation.goBack()}>
-          ← 뒤로
+        <HandDrawnButton variant="secondary" onPress={() => navigation.navigate('LedgerHome')}>
+          ← 대시보드
         </HandDrawnButton>
       </View>
 
@@ -353,6 +382,25 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </Pressable>
             ))}
           </View>
+        </HandDrawnCard>
+      </View>
+
+      <View style={styles.section}>
+        <HandDrawnCard>
+          <Text style={[styles.sectionTitle, themeStyles.sectionTitle]}>월간 예산 (대시보드)</Text>
+          <Text style={[styles.rowLabel, themeStyles.rowLabel, styles.budgetHint]}>
+            이번 달 경조사비 목표(원). 비우고 저장하면 미사용.
+          </Text>
+          <HandDrawnInput
+            value={monthlyBudgetInput}
+            onChangeText={setMonthlyBudgetInput}
+            placeholder="예: 5000000"
+            keyboardType="number-pad"
+            style={styles.budgetInput}
+          />
+          <HandDrawnButton variant="primary" onPress={handleSaveBudget}>
+            예산 목표 저장
+          </HandDrawnButton>
         </HandDrawnCard>
       </View>
 
@@ -604,6 +652,14 @@ const styles = StyleSheet.create({
   },
   timeChip: {
     minWidth: 80,
+  },
+  budgetHint: {
+    opacity: 0.85,
+    marginBottom: SPACING.rowGap,
+    fontSize: FONT.bodySmall,
+  },
+  budgetInput: {
+    marginBottom: SPACING.rowGap,
   },
 });
 

@@ -18,7 +18,7 @@ import {
   type TypeSummary,
 } from '../db/Database';
 import { getEventDisplayText } from '../constants/eventTypes';
-import { getThemeColor, SPACING, FONT, HAND_DRAWN_LIGHT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, FLUID_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 
@@ -39,12 +39,12 @@ const StatisticsScreen: React.FC<StatisticsScreenProps> = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
 
   const accent =
-    getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+    getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || FLUID_LIGHT.accent;
   const color = getThemeColor(theme, 'color') || '#2d2d2d';
   const colorMuted =
     getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
-  const backgroundColor = getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
+  const backgroundColor = getThemeColor(theme, 'background') || FLUID_LIGHT.background;
 
   const loadStats = useCallback(async () => {
     try {

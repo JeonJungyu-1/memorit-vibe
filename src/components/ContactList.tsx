@@ -28,7 +28,7 @@ import {
   getContactGroupLabel,
   getContactGroupEmoji,
 } from '../constants/contactGroups';
-import { getThemeColor, SPACING, FONT, WOBBLY_SM, HAND_DRAWN_LIGHT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, RADIUS_SM, FLUID_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from './HandDrawnButton';
 import { HandDrawnInput } from './HandDrawnInput';
 
@@ -59,7 +59,7 @@ function getSearchableText(item: {
 const ContactList: React.FC = () => {
   const theme = useTheme();
   const navigation = useNavigation<ContactListNavigationProp>();
-  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || HAND_DRAWN_LIGHT.accent;
+  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || FLUID_LIGHT.accent;
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const placeholderColor = getThemeColor(theme, 'placeholderColor') || '#999';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
@@ -152,7 +152,7 @@ const ContactList: React.FC = () => {
         text1: '저장 완료',
         text2: `${toSave.length}명의 연락처가 저장되었습니다.`,
       });
-      navigation.replace('Home');
+      navigation.replace('MainTabs');
     } catch (e) {
       console.error('Failed to save selected contacts', e);
       Toast.show({
@@ -381,7 +381,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 8,
-    ...WOBBLY_SM,
+    ...RADIUS_SM,
   },
   title: {
     fontSize: FONT.title,
@@ -409,7 +409,7 @@ const styles = StyleSheet.create({
   groupChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    ...WOBBLY_SM,
+    ...RADIUS_SM,
     borderWidth: 2,
   },
   groupChipText: {

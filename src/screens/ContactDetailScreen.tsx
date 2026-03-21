@@ -48,9 +48,10 @@ import {
   SPACING,
   RADIUS,
   FONT,
-  WOBBLY_SM,
-  WOBBLY_LG,
-  HARD_SHADOW,
+  RADIUS_SM,
+  RADIUS_LG,
+  SOFT_FLOAT_SHADOW,
+  FLUID_LIGHT,
 } from '../utils/themeColors';
 import {
   CONTACT_GROUP_OPTIONS,
@@ -81,7 +82,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
     minute: number;
   } | null>(null);
 
-  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || FLUID_LIGHT.accent;
   const secondaryAccent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || '#2d5da1';
   const color = getThemeColor(theme, 'color') || '#2d2d2d';
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
@@ -89,7 +90,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
   const screenBg =
     (typeof rawBg === 'object' && rawBg?.val) || (typeof rawBg === 'string' ? rawBg : '') || '#fdfbf7';
   const borderLight = getThemeColor(theme, 'gray4') || '#e5e0d8';
-  const red = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+  const red = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || FLUID_LIGHT.accent;
 
   const themeStyles = useMemo(
     () => ({
@@ -110,7 +111,7 @@ const ContactDetailScreen: React.FC<ContactDetailScreenProps> = ({
       sectionTitle: { color, fontFamily: FONT.fontFamilyHeading },
       totalExpense: { color: secondaryAccent, fontFamily: FONT.fontFamilyBody },
     }),
-    [accent, secondaryAccent, color, colorMuted, borderLight, red],
+    [secondaryAccent, color, colorMuted, borderLight, red],
   );
 
   const loadData = useCallback(async () => {
@@ -468,28 +469,26 @@ const AddEventModal: React.FC<AddEventModalProps> = ({
     () => ({
       box: {
         backgroundColor: modalBg,
-        borderColor: modalBorder,
-        shadowColor: modalBorder,
-        ...WOBBLY_LG,
-        ...HARD_SHADOW,
-        borderWidth: 2,
-        shadowOpacity: 1,
+        borderColor: 'transparent',
+        ...RADIUS_LG,
+        ...SOFT_FLOAT_SHADOW,
+        borderWidth: 0,
       },
       title: { color: modalColor, fontFamily: FONT.fontFamilyHeading },
       label: { color: modalColor, fontFamily: FONT.fontFamilyBody },
       dateButton: {
-        borderColor: modalBorder,
+        borderColor: 'transparent',
         backgroundColor: modalBgHover,
-        ...WOBBLY_SM,
-        borderWidth: 2,
+        ...RADIUS_SM,
+        borderWidth: 0,
       },
       dateButtonText: { color: modalColor, fontFamily: FONT.fontFamilyBody },
-      typeButton: { borderColor: modalBorder, ...WOBBLY_SM, borderWidth: 2 },
+      typeButton: { borderColor: 'transparent', backgroundColor: modalBgHover, ...RADIUS_SM, borderWidth: 0 },
       typeButtonActive: { backgroundColor: modalAccent, borderColor: modalAccent },
       typeButtonText: { color: modalColor, fontFamily: FONT.fontFamilyBody },
       typeButtonTextActive: { color: '#fff', fontFamily: FONT.fontFamilyBody },
     }),
-    [modalBg, modalColor, modalBorder, modalBgHover, modalAccent],
+    [modalBg, modalColor, modalBgHover, modalAccent],
   );
 
   const handleDateChange = useCallback(
@@ -673,28 +672,25 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const modalAccent = getThemeColor(modalTheme, 'blue9') || getThemeColor(modalTheme, 'blue10') || '#2d5da1';
   const modalBg = getThemeColor(modalTheme, 'background') || '#fdfbf7';
   const modalColor = getThemeColor(modalTheme, 'color') || '#2d2d2d';
-  const modalBorder = getThemeColor(modalTheme, 'borderColor') || '#2d2d2d';
   const modalBgHover = getThemeColor(modalTheme, 'backgroundHover') || '#f5f3ef';
 
   const modalThemeStyles = useMemo(
     () => ({
       box: {
         backgroundColor: modalBg,
-        borderColor: modalBorder,
-        shadowColor: modalBorder,
-        ...WOBBLY_LG,
-        ...HARD_SHADOW,
-        borderWidth: 2,
-        shadowOpacity: 1,
+        borderColor: 'transparent',
+        ...RADIUS_LG,
+        ...SOFT_FLOAT_SHADOW,
+        borderWidth: 0,
       },
       title: { color: modalColor, fontFamily: FONT.fontFamilyHeading },
       label: { color: modalColor, fontFamily: FONT.fontFamilyBody },
-      typeButton: { borderColor: modalBorder, ...WOBBLY_SM, borderWidth: 2 },
+      typeButton: { borderColor: 'transparent', backgroundColor: modalBgHover, ...RADIUS_SM, borderWidth: 0 },
       typeButtonActive: { backgroundColor: modalAccent, borderColor: modalAccent },
       typeButtonText: { color: modalColor, fontFamily: FONT.fontFamilyBody },
       typeButtonTextActive: { color: '#fff', fontFamily: FONT.fontFamilyBody },
     }),
-    [modalBg, modalColor, modalBorder, modalBgHover, modalAccent],
+    [modalBg, modalColor, modalBgHover, modalAccent],
   );
 
   const handleSave = async () => {

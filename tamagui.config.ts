@@ -1,58 +1,51 @@
 import { createTamagui } from 'tamagui';
 import { config as defaultConfig } from '@tamagui/config/v3';
-import {
-  HAND_DRAWN_LIGHT,
-  HAND_DRAWN_DARK,
-} from './src/utils/themeColors';
+import { fluidLedgerLight, fluidLedgerDark } from './src/theme/fluidLedgerTokens';
 
 /**
- * Hand-Drawn 라이트 테마 오버라이드.
- * getThemeColor(theme, key) 패턴을 유지하며 기존 키에 Hand-Drawn 팔레트 매핑.
+ * Fluid Ledger 라이트 테마 — Tamagui 토큰 매핑.
  */
-const handDrawnLightOverrides = {
-  color: HAND_DRAWN_LIGHT.foreground,
-  background: HAND_DRAWN_LIGHT.background,
-  borderColor: HAND_DRAWN_LIGHT.border,
-  backgroundHover: '#f5f3ef',
-  placeholderColor: HAND_DRAWN_LIGHT.mutedText,
-  blue9: HAND_DRAWN_LIGHT.secondaryAccent,
-  blue10: HAND_DRAWN_LIGHT.secondaryAccent,
-  gray3: '#ebe7e0',
-  gray4: HAND_DRAWN_LIGHT.muted,
-  gray11: HAND_DRAWN_LIGHT.mutedText,
-  color11: HAND_DRAWN_LIGHT.mutedText,
-  red9: HAND_DRAWN_LIGHT.accent,
-  red10: HAND_DRAWN_LIGHT.accent,
+const fluidLightOverrides = {
+  color: fluidLedgerLight.onSurface,
+  background: fluidLedgerLight.surface,
+  borderColor: fluidLedgerLight.outlineVariant,
+  backgroundHover: fluidLedgerLight.surfaceContainerLowest,
+  placeholderColor: fluidLedgerLight.onSurfaceVariant,
+  blue9: fluidLedgerLight.secondary,
+  blue10: fluidLedgerLight.secondaryDim,
+  gray3: fluidLedgerLight.surfaceContainerLow,
+  gray4: fluidLedgerLight.surfaceContainer,
+  gray11: fluidLedgerLight.onSurfaceVariant,
+  color11: fluidLedgerLight.onSurfaceVariant,
+  red9: fluidLedgerLight.primary,
+  red10: fluidLedgerLight.primaryDim,
 };
 
-/**
- * Hand-Drawn 다크 테마 오버라이드.
- */
-const handDrawnDarkOverrides = {
-  color: HAND_DRAWN_DARK.foreground,
-  background: HAND_DRAWN_DARK.background,
-  borderColor: HAND_DRAWN_DARK.border,
-  backgroundHover: HAND_DRAWN_DARK.cardBg,
-  placeholderColor: HAND_DRAWN_DARK.mutedText,
-  blue9: HAND_DRAWN_DARK.secondaryAccent,
-  blue10: HAND_DRAWN_DARK.secondaryAccent,
-  gray3: '#36332e',
-  gray4: HAND_DRAWN_DARK.muted,
-  gray11: HAND_DRAWN_DARK.mutedText,
-  color11: HAND_DRAWN_DARK.mutedText,
-  red9: HAND_DRAWN_DARK.accent,
-  red10: HAND_DRAWN_DARK.accent,
+const fluidDarkOverrides = {
+  color: fluidLedgerDark.onSurface,
+  background: fluidLedgerDark.surface,
+  borderColor: fluidLedgerDark.outlineVariant,
+  backgroundHover: fluidLedgerDark.surfaceContainerLowest,
+  placeholderColor: fluidLedgerDark.onSurfaceVariant,
+  blue9: fluidLedgerDark.secondary,
+  blue10: fluidLedgerDark.secondary,
+  gray3: fluidLedgerDark.surfaceContainerLow,
+  gray4: fluidLedgerDark.surfaceContainer,
+  gray11: fluidLedgerDark.onSurfaceVariant,
+  color11: fluidLedgerDark.onSurfaceVariant,
+  red9: fluidLedgerDark.primary,
+  red10: fluidLedgerDark.primaryDim,
 };
 
 const lightTheme =
   defaultConfig.themes?.light != null
-    ? { ...defaultConfig.themes.light, ...handDrawnLightOverrides }
-    : handDrawnLightOverrides;
+    ? { ...defaultConfig.themes.light, ...fluidLightOverrides }
+    : fluidLightOverrides;
 
 const darkTheme =
   defaultConfig.themes?.dark != null
-    ? { ...defaultConfig.themes.dark, ...handDrawnDarkOverrides }
-    : handDrawnDarkOverrides;
+    ? { ...defaultConfig.themes.dark, ...fluidDarkOverrides }
+    : fluidDarkOverrides;
 
 const config = createTamagui({
   ...defaultConfig,

@@ -23,7 +23,7 @@ import {
   CHECKLIST_EVENT_TYPES,
   type ChecklistTemplate,
 } from '../constants/checklistTemplates';
-import { getThemeColor, SPACING, FONT, WOBBLY_SM, HAND_DRAWN_LIGHT } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, RADIUS_SM, FLUID_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 
@@ -43,7 +43,7 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
   const [checklistEventKey, setChecklistEventKey] = useState<string>('wedding');
 
   const accent =
-    getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+    getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || FLUID_LIGHT.accent;
   const color = getThemeColor(theme, 'color') || '#2d2d2d';
   const colorMuted =
     getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
@@ -73,7 +73,7 @@ const HelperScreen: React.FC<HelperScreenProps> = ({ navigation }) => {
     [checklistEventKey],
   );
 
-  const backgroundColor = getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
+  const backgroundColor = getThemeColor(theme, 'background') || FLUID_LIGHT.background;
 
   return (
     <View style={[styles.container, { backgroundColor }]}>
@@ -279,7 +279,7 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderWidth: 2,
-    ...WOBBLY_SM,
+    ...RADIUS_SM,
   },
   chipText: {
     fontSize: FONT.bodySmall,

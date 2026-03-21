@@ -91,6 +91,8 @@ export const useContacts = (options?: UseContactsOptions) => {
     loadContacts().catch(e => {
       console.error('Unhandled error in loadContacts', e);
     });
+    // 최초 마운트 시 한 번만 연락처 로드 (loadContacts를 deps에 넣으면 매 렌더 재실행됨)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return { contacts, loading, loadContacts };

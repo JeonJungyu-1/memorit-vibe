@@ -3,12 +3,12 @@ import { Pressable, StyleSheet, Text, type ViewStyle } from 'react-native';
 import { useTheme } from 'tamagui';
 import {
   getThemeColor,
-  WOBBLY_MD,
-  HARD_SHADOW,
+  RADIUS_MD,
   SPACING,
   FONT,
-  BUTTON_BORDER_WIDTH,
 } from '../utils/themeColors';
+import { fluidLedgerLight, fluidLedgerDark } from '../theme/fluidLedgerTokens';
+import { useThemeMode } from '../contexts/ThemeContext';
 
 export type HandDrawnButtonVariant = 'primary' | 'secondary';
 
@@ -21,10 +21,7 @@ export type HandDrawnButtonProps = {
 };
 
 /**
- * Hand-Drawn 스타일 버튼.
- * - wobbly border radius, hard shadow, pressed 시 그림자 제거 + translate 효과.
- * - primary: 기본 흰 배경 + 검정 테두리/글자, 누르면 accent(빨강) + 그림자 축소.
- * - secondary: muted 배경 + 파란 테두리/강조, 누르면 secondaryAccent 강조.
+ * Fluid Ledger 스타일 버튼 (라운드·Manrope).
  */
 export function HandDrawnButton({
   variant = 'primary',
@@ -34,12 +31,13 @@ export function HandDrawnButton({
   style,
 }: HandDrawnButtonProps): React.ReactElement {
   const theme = useTheme();
-  const foreground = getThemeColor(theme, 'color') || '#2d2d2d';
-  const borderColor = getThemeColor(theme, 'borderColor') || '#2d2d2d';
-  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
-  const secondaryAccent = getThemeColor(theme, 'blue9') || getThemeColor(theme, 'blue10') || '#2d5da1';
-  const muted = getThemeColor(theme, 'gray4') || getThemeColor(theme, 'color11') || '#e5e0d8';
-  const cardBg = getThemeColor(theme, 'backgroundHover') ?? '#ffffff';
+  const { resolvedTheme } = useThemeMode();
+  const isDark = resolvedTheme === 'dark';
+  const p = isDark ? fluidLedgerDark : fluidLedgerLight;
+  const primary = getThemeColor(theme, 'red9') || p.primary;
+  const onPrimary = p.onPrimary;
+  const surfaceHi = getThemeColor(theme, 'gray4') || p.surfaceContainer;
+  const secondary = getThemeColor(theme, 'blue9') || p.secondary;
 
   const isPrimary = variant === 'primary';
 
@@ -49,71 +47,42 @@ export function HandDrawnButton({
       disabled={disabled}
       style={({ pressed }) => {
         const base: ViewStyle = {
-          ...WOBBLY_MD,
-          borderWidth: BUTTON_BORDER_WIDTH,
+          ...RADIUS_MD,
+          borderWidth: 0,
           minHeight: SPACING.touchTargetMin,
           justifyContent: 'center',
           alignItems: 'center',
-          paddingVertical: 10,
-          paddingHorizontal: 16,
+          paddingVertical: 12,
+          paddingHorizontal: 18,
+          opacity: disabled ? 0.5 : pressed ? 0.92 : 1,
         };
-        if (pressed || disabled) {
+        if (isPrimary) {
           return [
             base,
-            {
-              backgroundColor: isPrimary ? accent : secondaryAccent,
-              borderColor: isPrimary ? accent : secondaryAccent,
-              shadowColor: 'transparent',
-              shadowOffset: { width: 0, height: 0 },
-              shadowRadius: 0,
-              shadowOpacity: 0,
-              elevation: 0,
-              transform: [
-                { translateX: pressed && !disabled ? 4 : 0 },
-                { translateY: pressed && !disabled ? 4 : 0 },
-              ],
-            },
+            { backgroundColor: primary },
             style,
           ];
         }
         return [
           base,
           {
-            backgroundColor: isPrimary ? cardBg : muted,
-            borderColor: isPrimary ? borderColor : secondaryAccent,
-            shadowColor: borderColor,
-            ...HARD_SHADOW,
-            shadowOpacity: 1,
+            backgroundColor: surfaceHi,
           },
           style,
         ];
       }}
     >
-      {({ pressed }) => {
-        const isPressedOrDisabled = pressed || disabled;
-        const textColor =
-          isPrimary && isPressedOrDisabled
-            ? '#fff'
-            : !isPrimary && isPressedOrDisabled
-              ? '#fff'
-              : isPrimary
-                ? foreground
-                : secondaryAccent;
-        return (
-          <Text
-            style={[
-              styles.label,
-              {
-                color: textColor,
-                fontFamily: FONT.fontFamilyBody,
-                opacity: disabled ? 0.6 : 1,
-              },
-            ]}
-          >
-            {children}
-          </Text>
-        );
-      }}
+      <Text
+        style={[
+          styles.label,
+          {
+            color: isPrimary ? onPrimary : secondary,
+            fontFamily: FONT.fontFamilySemiBold,
+          },
+        ]}
+      >
+        {children}
+      </Text>
     </Pressable>
   );
 }

@@ -9,31 +9,23 @@ import { useTheme } from 'tamagui';
 import { useThemeMode } from '../contexts/ThemeContext';
 import {
   getThemeColor,
-  WOBBLY_MD,
-  WOBBLY_SM,
-  CARD_SHADOW,
-  HAND_DRAWN_LIGHT,
-  HAND_DRAWN_DARK,
+  RADIUS_MD,
+  SOFT_FLOAT_SHADOW,
+  FLUID_LIGHT,
+  FLUID_DARK,
 } from '../utils/themeColors';
 
 export type HandDrawnCardDecoration = 'tape' | 'tack' | 'none';
 
 export type HandDrawnCardProps = ViewProps & {
-  /** 카드 내용 */
   children: React.ReactNode;
-  /** 상단 데코: tape(회색 띠), tack(빨간 압정), none */
   decoration?: HandDrawnCardDecoration;
-  /** 포스트잇 스타일 배경 (연한 노란/다크 시 어두운 톤) */
   postIt?: boolean;
-  /** 카드 컨테이너에 적용할 추가 스타일 */
   style?: ViewStyle;
 };
 
 /**
- * Hand-Drawn 스타일 카드.
- * - wobbly border radius, hard shadow, 테두리.
- * - tape: 상단 중앙 회색 띠 + 약한 기울기
- * - tack: 상단 중앙 빨간 압정 원
+ * Fluid Ledger 카드 — 톤 분리·은은한 그림자 (테이프/압정 데코는 비활성 권장).
  */
 export function HandDrawnCard({
   children,
@@ -45,22 +37,20 @@ export function HandDrawnCard({
   const theme = useTheme();
   const { resolvedTheme } = useThemeMode();
   const isDark = resolvedTheme === 'dark';
-  const palette = isDark ? HAND_DRAWN_DARK : HAND_DRAWN_LIGHT;
+  const palette = isDark ? FLUID_DARK : FLUID_LIGHT;
 
-  const borderColor = getThemeColor(theme, 'borderColor') || palette.border;
   const cardBg = postIt
     ? palette.postIt
     : (getThemeColor(theme, 'backgroundHover') || palette.cardBg);
   const muted = getThemeColor(theme, 'gray4') || palette.muted;
-  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || palette.accent;
+  const accent = getThemeColor(theme, 'red9') || palette.accent;
+  const borderColor = getThemeColor(theme, 'borderColor') || palette.border;
 
   const cardStyle: ViewStyle = {
     backgroundColor: cardBg,
-    borderWidth: 2,
-    borderColor,
-    ...WOBBLY_MD,
-    shadowColor: palette.border,
-    ...CARD_SHADOW,
+    borderWidth: 0,
+    ...RADIUS_MD,
+    ...SOFT_FLOAT_SHADOW,
   };
 
   return (
@@ -71,7 +61,6 @@ export function HandDrawnCard({
             styles.tape,
             {
               backgroundColor: muted,
-              borderColor: muted,
             },
           ]}
         />
@@ -82,7 +71,7 @@ export function HandDrawnCard({
             styles.tack,
             {
               backgroundColor: accent,
-              borderColor: borderColor,
+              borderColor,
             },
           ]}
         />
@@ -109,9 +98,7 @@ const styles = StyleSheet.create({
     marginLeft: -30,
     width: 60,
     height: 14,
-    borderWidth: 1,
-    ...WOBBLY_SM,
-    transform: [{ rotate: '-3deg' }],
+    borderRadius: 4,
     zIndex: 1,
   },
   tack: {
@@ -122,7 +109,7 @@ const styles = StyleSheet.create({
     width: 16,
     height: 16,
     borderRadius: 8,
-    borderWidth: 2,
+    borderWidth: 0,
     zIndex: 1,
   },
 });

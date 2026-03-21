@@ -33,7 +33,7 @@ import {
 } from '../constants/contactGroups';
 import { cancelEventNotification } from '../services/notificationService';
 import { getEventDisplayText } from '../constants/eventTypes';
-import { getThemeColor, SPACING, FONT, WOBBLY_SM } from '../utils/themeColors';
+import { getThemeColor, SPACING, FONT, RADIUS_SM, FLUID_LIGHT } from '../utils/themeColors';
 import { HandDrawnButton } from '../components/HandDrawnButton';
 import { HandDrawnCard } from '../components/HandDrawnCard';
 import { HandDrawnInput } from '../components/HandDrawnInput';
@@ -91,7 +91,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const [monthEvents, setMonthEvents] = useState<EventWithDisplayName[]>([]);
   const [selectedCalendarDate, setSelectedCalendarDate] = useState<string | null>(null);
 
-  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+  const accent = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || FLUID_LIGHT.accent;
   const color = getThemeColor(theme, 'color') || '#2d2d2d';
   const colorMuted = getThemeColor(theme, 'color11') || getThemeColor(theme, 'gray11') || '#666';
   const borderLight = getThemeColor(theme, 'gray4') || '#eee';
@@ -180,7 +180,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const markedDates = useMemo(() => {
     const marked: Record<string, { marked?: boolean; selected?: boolean; selectedColor?: string; selectedTextColor?: string }> = {};
-    const accentColor = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || '#ff4d4d';
+    const accentColor = getThemeColor(theme, 'red9') || getThemeColor(theme, 'red10') || FLUID_LIGHT.accent;
     monthEvents.forEach((e) => {
       if (!e.date) return;
       if (!marked[e.date]) marked[e.date] = { marked: true };
@@ -220,8 +220,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     [accent, color, colorMuted, borderLighter],
   );
 
+  const rootNav = navigation.getParent();
+
   const handleReselectContacts = () => {
-    navigation.navigate('ContactSelect');
+    rootNav?.navigate('ContactSelect');
   };
 
   const handleOpenSettings = () => {
@@ -229,11 +231,11 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   const handleOpenStatistics = () => {
-    navigation.navigate('Statistics');
+    navigation.navigate('Reports');
   };
 
   const handleOpenHelper = () => {
-    navigation.navigate('Helper');
+    rootNav?.navigate('Helper');
   };
 
   const handleRemoveContact = useCallback(
@@ -286,7 +288,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
   const renderListHeader = () =>
     upcomingEvents.length > 0 ? (
-      <HandDrawnCard decoration="tape" style={styles.upcomingCardWrap}>
+      <HandDrawnCard decoration="none" style={styles.upcomingCardWrap}>
         <Text style={[styles.upcomingSectionTitle, themeStyles.upcomingSectionTitle]}>
           다가오는 기념일
         </Text>
@@ -295,7 +297,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             key={`${item.id}-${item.contactId}`}
             style={[styles.upcomingRow, themeStyles.upcomingRow]}
             onPress={() =>
-              navigation.navigate('ContactDetail', {
+              rootNav?.navigate('ContactDetail', {
                 contactId: item.contactId,
               })
             }
@@ -418,7 +420,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           <Pressable
             style={[styles.contactRow, themeStyles.contactRow]}
             onPress={() =>
-              navigation.navigate('ContactDetail', { contactId: item.contactId })
+              rootNav?.navigate('ContactDetail', { contactId: item.contactId })
             }
             onLongPress={() => handleRemoveContact(item)}
           >
@@ -442,7 +444,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         </>
       ) : (
         <ScrollView style={styles.calendarScroll} showsVerticalScrollIndicator={false}>
-          <HandDrawnCard decoration="tack" style={styles.calendarCard}>
+          <HandDrawnCard decoration="none" style={styles.calendarCard}>
             <Calendar
               current={calendarCurrent}
               onDayPress={(day) => setSelectedCalendarDate(day.dateString)}
@@ -472,7 +474,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
                     key={`${item.id}-${item.contactId}`}
                     style={[styles.upcomingRow, themeStyles.upcomingRow]}
                     onPress={() =>
-                      navigation.navigate('ContactDetail', {
+                      rootNav?.navigate('ContactDetail', {
                         contactId: item.contactId,
                       })
                     }
@@ -553,7 +555,7 @@ const styles = StyleSheet.create({
   groupChip: {
     paddingVertical: 6,
     paddingHorizontal: 12,
-    ...WOBBLY_SM,
+    ...RADIUS_SM,
     borderWidth: 2,
   },
   groupChipText: {

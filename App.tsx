@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   SafeAreaView,
   StyleSheet,
@@ -11,15 +11,19 @@ import {
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Toast from 'react-native-toast-message';
-import { useFonts } from '@expo-google-fonts/kalam';
-import { Kalam_700Bold } from '@expo-google-fonts/kalam';
-import { PatrickHand_400Regular } from '@expo-google-fonts/patrick-hand';
+import {
+  useFonts,
+  Manrope_400Regular,
+  Manrope_500Medium,
+  Manrope_600SemiBold,
+  Manrope_700Bold,
+  Manrope_800ExtraBold,
+} from '@expo-google-fonts/manrope';
+import * as SplashScreen from 'expo-splash-screen';
 import type { RootStackParamList } from './src/navigation/types';
 import ContactList from './src/components/ContactList';
-import HomeScreen from './src/screens/HomeScreen';
+import MainTabNavigator from './src/navigation/MainTabNavigator';
 import ContactDetailScreen from './src/screens/ContactDetailScreen';
-import SettingsScreen from './src/screens/SettingsScreen';
-import StatisticsScreen from './src/screens/StatisticsScreen';
 import HelperScreen from './src/screens/HelperScreen';
 import {
   getDBConnection,
@@ -32,10 +36,9 @@ import { runLocalAutoBackupIfNeeded } from './src/utils/backupRestore';
 import { useTheme } from 'tamagui';
 import config from './tamagui.config';
 import { ThemeProvider, useThemeMode } from './src/contexts/ThemeContext';
-import {
-  getThemeColor,
-  HAND_DRAWN_LIGHT,
-} from './src/utils/themeColors';
+import { getThemeColor, FLUID_LIGHT } from './src/utils/themeColors';
+
+SplashScreen.preventAutoHideAsync().catch(() => {});
 
 LogBox.ignoreLogs([/SQLite/]);
 
@@ -45,7 +48,7 @@ function AppShell({ children }: { children: React.ReactNode }) {
   const theme = useTheme();
   const { resolvedTheme } = useThemeMode();
   const backgroundColor =
-    getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
+    getThemeColor(theme, 'background') || FLUID_LIGHT.background;
   const isDark = resolvedTheme === 'dark';
 
   return (
@@ -70,17 +73,26 @@ const styles = StyleSheet.create({
 function AppContent() {
   const theme = useTheme();
   const [fontsLoaded, fontsError] = useFonts({
-    Kalam_700Bold,
-    PatrickHand_400Regular,
+    Manrope_400Regular,
+    Manrope_500Medium,
+    Manrope_600SemiBold,
+    Manrope_700Bold,
+    Manrope_800ExtraBold,
   });
   const [dbReady, setDbReady] = useState(false);
   const [initialRoute, setInitialRoute] = useState<
     keyof RootStackParamList | null
   >(null);
   const loadingColor =
-    getThemeColor(theme, 'red9') || HAND_DRAWN_LIGHT.accent;
+    getThemeColor(theme, 'red9') || FLUID_LIGHT.accent;
   const screenBackgroundColor =
-    getThemeColor(theme, 'background') || HAND_DRAWN_LIGHT.background;
+    getThemeColor(theme, 'background') || FLUID_LIGHT.background;
+
+  const onLayoutRootView = useCallback(async () => {
+    if (fontsLoaded || fontsError) {
+      await SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontsError]);
 
   useEffect(() => {
     async function init() {
@@ -89,7 +101,7 @@ function AppContent() {
         await createTables(db);
         setDbReady(true);
         const count = await getContactsCount(db);
-        setInitialRoute(count > 0 ? 'Home' : 'ContactSelect');
+        setInitialRoute(count > 0 ? 'MainTabs' : 'ContactSelect');
       } catch (error) {
         console.error('Failed to initialize database', error);
         setDbReady(true);
@@ -128,11 +140,11 @@ function AppContent() {
 
   useEffect(() => {
     if (fontsError) {
-      console.warn('Hand-Drawn 폰트 로드 실패, 시스템 폰트 사용:', fontsError);
+      console.warn('Manrope 폰트 로드 실패, 시스템 폰트 사용:', fontsError);
     }
   }, [fontsError]);
 
-  const isReady = dbReady && initialRoute !== null && fontsLoaded;
+  const isReady = dbReady && initialRoute !== null && (fontsLoaded || fontsError);
   if (!isReady) {
     return (
       <AppShell>
@@ -145,25 +157,23 @@ function AppContent() {
 
   return (
     <AppShell>
-      <>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <NavigationContainer>
-        <Stack.Navigator
-          initialRouteName={initialRoute}
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: screenBackgroundColor },
-          }}
-        >
-          <Stack.Screen name="ContactSelect" component={ContactList} />
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
-          <Stack.Screen name="Settings" component={SettingsScreen} />
-          <Stack.Screen name="Statistics" component={StatisticsScreen} />
-          <Stack.Screen name="Helper" component={HelperScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
-      <Toast />
-      </>
+          <Stack.Navigator
+            initialRouteName={initialRoute}
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: screenBackgroundColor },
+            }}
+          >
+            <Stack.Screen name="ContactSelect" component={ContactList} />
+            <Stack.Screen name="MainTabs" component={MainTabNavigator} />
+            <Stack.Screen name="ContactDetail" component={ContactDetailScreen} />
+            <Stack.Screen name="Helper" component={HelperScreen} />
+          </Stack.Navigator>
+        </NavigationContainer>
+        <Toast />
+      </View>
     </AppShell>
   );
 }
