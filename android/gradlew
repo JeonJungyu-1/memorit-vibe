@@ -114,6 +114,18 @@ case "$( uname )" in                #(
   NONSTOP* )        nonstop=true ;;
 esac
 
+# Room KSP 등은 Java 17 바이트코드. JAVA_HOME이 Semeru 11 등이면 UnsupportedClassVersionError(61 vs 55) 발생.
+# Homebrew OpenJDK 17이 있으면 런처 JVM도 17로 맞춤. 비활성: RN_GRADLE_USE_SYSTEM_JAVA=1
+if [ "$darwin" = true ] && [ "${RN_GRADLE_USE_SYSTEM_JAVA:-}" != "1" ]; then
+    if [ -x "/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin/java" ]; then
+        JAVA_HOME="/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+        export JAVA_HOME
+    elif [ -x "/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home/bin/java" ]; then
+        JAVA_HOME="/usr/local/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home"
+        export JAVA_HOME
+    fi
+fi
+
 CLASSPATH="\\\"\\\""
 
 
